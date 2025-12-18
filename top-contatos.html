@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Top 10 Contatos Primários - ORACLE</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="estilo.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <style>
+    /* garantia extra: se seu CSS tiver overflow hidden, aqui a gente libera */
+    body { overflow-y: auto !important; }
+    .dashboard-main { overflow: visible !important; }
+  </style>
+</head>
+
+<body>
+  <div class="app-wrapper d-flex flex-column">
+
+    <!-- HEADER -->
+    <header class="pl-header">
+      <div class="container-fluid">
+        <div class="row align-items-center g-2">
+          <div class="col-md-7">
+            <h1 class="mb-0">Chamados 2025 - ORACLE</h1>
+            <p class="mb-0">Programa Conecta • Grupo Pluma</p>
+          </div>
+
+          <div class="col-md-3 text-md-end text-center d-flex gap-2 justify-content-md-end justify-content-center">
+            <a class="btn btn-sm btn-light" href="index.html">📄 Chamados</a>
+            <a class="btn btn-sm btn-light" href="graficos.html">📊 Gráficos</a>
+          </div>
+
+          <div class="col-md-2 text-md-end text-center">
+            <img src="logo-conecta.png" alt="Logo Programa Conecta" class="logo-conecta img-fluid">
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-main flex-grow-1 d-flex flex-column">
+
+      <!-- STATUS / ERRO / UPLOAD -->
+      <section class="py-2 bg-white border-bottom">
+        <div class="container-fluid">
+          <div id="statusBox" class="alert alert-info py-2 mb-0">
+            Carregando dados... (tentando <b>dados_sr.csv</b>)
+          </div>
+
+          <div id="uploadBox" class="mt-2 d-none">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <input class="form-control form-control-sm" type="file" id="fileInput" accept=".csv" style="max-width: 420px;">
+              <span class="small text-muted">
+                Se você abriu por duplo clique (file://), selecione o CSV aqui.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPIs -->
+      <section class="py-2 flex-shrink-0">
+        <div class="container-fluid">
+          <div class="row g-2">
+            <div class="col-6 col-lg-3">
+              <div class="card pl-card-kpi text-center">
+                <div class="card-body py-2">
+                  <h3 class="card-title mb-1">Total de SRs</h3>
+                  <p class="card-text kpi-valor mb-0" id="kpiTotal">-</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+              <div class="card pl-card-kpi text-center">
+                <div class="card-body py-2">
+                  <h3 class="card-title mb-1">Contatos únicos</h3>
+                  <p class="card-text kpi-valor mb-0" id="kpiContatos">-</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+              <div class="card pl-card-kpi text-center">
+                <div class="card-body py-2">
+                  <h3 class="card-title mb-1">Top #1</h3>
+                  <p class="card-text kpi-valor mb-0" id="kpiTop1">-</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+              <div class="card pl-card-kpi text-center">
+                <div class="card-body py-2">
+                  <h3 class="card-title mb-1">SRs do Top #1</h3>
+                  <p class="card-text kpi-valor mb-0" id="kpiTop1Qtd">-</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTEÚDO -->
+      <section class="conteudo-row flex-grow-1">
+        <div class="container-fluid">
+          <div class="row g-2">
+
+            <!-- GRÁFICO -->
+            <div class="col-12 col-lg-6">
+              <div class="card pl-card-grafico h-100">
+                <div class="card-body py-2 d-flex flex-column">
+                  <h2 class="card-title fs-6 mb-1">Top 10 Contatos Primários (mais SRs)</h2>
+                  <div class="grafico-canvas-wrapper flex-grow-1" style="min-height: 360px;">
+                    <canvas id="graficoTopContatos"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABELA -->
+            <div class="col-12 col-lg-6">
+              <div class="card pl-card-tabela h-100">
+                <div class="card-body py-2 d-flex flex-column">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h2 class="card-title fs-6 mb-0">Ranking</h2>
+                    <span class="small text-muted">Top 10 por volume de SR</span>
+                  </div>
+
+                  <div class="tabela-container flex-grow-1" style="max-height: calc(100vh - 280px);">
+                    <table class="table table-striped table-hover table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Contato Primário</th>
+                          <th>Total SRs</th>
+                          <th>% do total</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tabelaTopContatos"></tbody>
+                    </table>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="text-center small text-muted py-1 pl-footer">
+      Programa Conecta • Dashboard gerado a partir de CSV
+    </footer>
+  </div>
+
+  <script>
+    Chart.register(ChartDataLabels);
+
+    const statusBox = document.getElementById("statusBox");
+    const uploadBox = document.getElementById("uploadBox");
+    const fileInput = document.getElementById("fileInput");
+
+    let chartTop = null;
+
+    // ✅ CSV parser com correção do BOM invisível
+    function parseCSV(texto) {
+      const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
+      if (!linhas.length) return [];
+
+      const cabecalho = linhas[0].split(",").map(h => h.trim());
+      if (cabecalho[0]) cabecalho[0] = cabecalho[0].replace(/^\uFEFF/, "");
+
+      const dados = [];
+      for (let i = 1; i < linhas.length; i++) {
+        const cols = linhas[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+        const obj = {};
+        for (let j = 0; j < cabecalho.length; j++) {
+          const key = cabecalho[j];
+          obj[key] = (cols[j] || "").replace(/^"|"$/g, "").trim();
+        }
+        dados.push(obj);
+      }
+      return dados;
+    }
+
+    function contarPorCampo(lista, campo) {
+      const mapa = {};
+      lista.forEach(item => {
+        const v = (item[campo] || "").trim() || "Não informado";
+        mapa[v] = (mapa[v] || 0) + 1;
+      });
+      return mapa;
+    }
+
+    function topN(mapa, n=10) {
+      return Object.entries(mapa)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0, n);
+    }
+
+    function renderTopContatos(dados) {
+      if (!Array.isArray(dados) || !dados.length) {
+        statusBox.className = "alert alert-warning py-2 mb-0";
+        statusBox.innerHTML = "CSV carregou, mas veio sem linhas de dados (ou cabeçalho inesperado).";
+        return;
+      }
+
+      // coluna esperada
+      const coluna = "Contato Primário";
+      if (!(coluna in dados[0])) {
+        statusBox.className = "alert alert-danger py-2 mb-0";
+        statusBox.innerHTML =
+          "Não encontrei a coluna <b>Contato Primário</b> no CSV. " +
+          "Verifique se o arquivo é o padrão do dashboard.";
+        return;
+      }
+
+      const totalSR = dados.length;
+      const contagem = contarPorCampo(dados, coluna);
+      const contatosUnicos = Object.keys(contagem).length;
+
+      const top = topN(contagem, 10);
+      const top1 = top[0] ? top[0][0] : "-";
+      const top1Qtd = top[0] ? top[0][1] : 0;
+
+      document.getElementById("kpiTotal").textContent = totalSR;
+      document.getElementById("kpiContatos").textContent = contatosUnicos;
+      document.getElementById("kpiTop1").textContent = top1;
+      document.getElementById("kpiTop1Qtd").textContent = top1Qtd;
+
+      // tabela
+      const tb = document.getElementById("tabelaTopContatos");
+      tb.innerHTML = "";
+      top.forEach((item, idx) => {
+        const [contato, qtd] = item;
+        const pct = totalSR ? ((qtd / totalSR) * 100).toFixed(1) : "0.0";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${contato}</td>
+          <td>${qtd}</td>
+          <td>${pct}%</td>
+        `;
+        tb.appendChild(tr);
+      });
+
+      // gráfico
+      const labels = top.map(x => x[0]);
+      const valores = top.map(x => x[1]);
+
+      const canvas = document.getElementById("graficoTopContatos");
+      if (chartTop) chartTop.destroy();
+
+      chartTop = new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            data: valores,
+            backgroundColor: "#006E51",
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: "#000",
+              anchor: "end",
+              align: "top",
+              font: { weight: "bold", size: 10 }
+            }
+          },
+          scales: {
+            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 0 } },
+            y: { beginAtZero: true, precision: 0 }
+          }
+        }
+      });
+
+      statusBox.className = "alert alert-success py-2 mb-0";
+      statusBox.innerHTML = `Dados carregados ✅ Total SRs: <b>${totalSR}</b>`;
+    }
+
+    async function tentarFetch() {
+      try {
+        const resp = await fetch("dados_sr.csv", { cache: "no-store" });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status} (arquivo dados_sr.csv não encontrado)`);
+
+        const texto = await resp.text();
+        const dados = parseCSV(texto);
+        renderTopContatos(dados);
+      } catch (e) {
+        statusBox.className = "alert alert-danger py-2 mb-0";
+        statusBox.innerHTML =
+          `Falha ao carregar <b>dados_sr.csv</b> via fetch. Motivo: <b>${e.message}</b><br>` +
+          `<span class="small">Se você abriu o HTML por duplo clique (file://) isso é normal. Selecione o CSV abaixo.</span>`;
+        uploadBox.classList.remove("d-none");
+      }
+    }
+
+    fileInput?.addEventListener("change", async (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      const texto = await file.text();
+      const dados = parseCSV(texto);
+      renderTopContatos(dados);
+    });
+
+    tentarFetch();
+  </script>
+</body>
+</html>

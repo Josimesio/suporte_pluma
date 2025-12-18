@@ -1,29 +1,31 @@
-﻿Número SR,Serviço,Issue Type,Status,Severidade,Criado_dt,Atualizado_dt,Contato Primário
-4-0001614985,Oracle Supply Planning Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-17,2025-12-17,larissa.amandio@ninecon.com.br
+﻿Numero_SR,Servico,Issue_Type,Status,Severidade,Criado_dt,Atualizado_dt,Contato_Primario
+4-0001276929,Oracle Fusion Cost Management Cloud Service,Significant Impairment,Review Defect,2-Significant,2025-11-19 00:00:00,2025-12-18,larissa.amandio@ninecon.com.br
+4-0001615348,Oracle Fusion Receivables Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-17,2025-12-18,wendel.andrade@ninecon.com.br
+4-0001614256,OCI Application Performance Monitoring Service,Significant Impairment,Customer Working,2-Significant,2025-12-17,2025-12-18,jair.santos@plumaagro.com.br
+4-0001304593,Oracle Fusion Inventory Management Cloud Service,Significant Impairment,Review Defect,2-Significant,2025-11-28 00:00:00,2025-12-18,abner.goncalves@ninecon.com.br
+4-0001606629,Oracle Fusion Tax Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-16 00:00:00,2025-12-18,leonardo.guilherme@ninecon.com.br
+4-0001325643,Oracle Fusion Purchasing Cloud Service,Technical Issue,Work in Progress,3-Standard,2025-12-05 00:00:00,2025-12-17,alisson.gomide@ninecon.com.br
+4-0001618723,Oracle Fusion Self Service Procurement Cloud Service,Technical Issue,Work in Progress,3-Standard,2025-12-17,2025-12-17,vanessa.chiochetta@ninecon.com.br
+4-0001618133,Oracle Fusion Self Service Procurement Cloud Service,Technical Issue,Solution Offered,3-Standard,2025-12-17,2025-12-17,vanessa.chiochetta@ninecon.com.br
+4-0001607193,Oracle Fusion Order Management Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-16 00:00:00,2025-12-17,alex.pagliarini@ninecon.com.br
+4-0001607105,Oracle Fusion Tax Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-16 00:00:00,2025-12-17,leonardo.guilherme@ninecon.com.br
+4-0001231157,Oracle Fusion Self Service Procurement Cloud Service,Technical Issue,Work in Progress,3-Standard,2025-11-05 00:00:00,2025-12-17,vanessa.chiochetta@ninecon.com.br
+4-0001167123,Oracle Fusion Cost Management Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-10-15 00:00:00,2025-12-17,rosangela.nakano@ninecon.com.br
+4-0001614985,Oracle Supply Planning Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-17,2025-12-17,larissa.amandio@ninecon.com.br
+4-0001322639,Oracle Fusion Product Development Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-04 00:00:00,2025-12-17,rubi.velez@ninecon.com.br
+4-0001468072,Latin America Cloud Local Solution (LACLS),Significant Impairment,Closed,2-Significant,2025-12-08 00:00:00,2025-12-17,wendel.andrade@ninecon.com.br
 4-0001318616,Oracle Fusion Receivables Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-03 00:00:00,2025-12-17,wendel.andrade@ninecon.com.br
-4-0001607193,Oracle Fusion Order Management Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-16,2025-12-17,alex.pagliarini@ninecon.com.br
-4-0001607105,Oracle Fusion Tax Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-16,2025-12-17,leonardo.guilherme@ninecon.com.br
-4-0001468072,Latin America Cloud Local Solution (LACLS),Significant Impairment,Close Requested,2-Significant,2025-12-08 00:00:00,2025-12-17,wendel.andrade@ninecon.com.br
-4-0001615348,Oracle Fusion Receivables Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-17,2025-12-17,wendel.andrade@ninecon.com.br
-4-0001325643,Oracle Fusion Purchasing Cloud Service,Technical Issue,Review Update,3-Standard,2025-12-05 00:00:00,2025-12-17,alisson.gomide@ninecon.com.br
-4-0001614256,OCI Application Performance Monitoring Service,Significant Impairment,Customer Working,2-Significant,2025-12-17,2025-12-17,jair.santos@plumaagro.com.br
-4-0001606865,Oracle Fusion Performance Management Cloud Service,Significant Impairment,Closed,2-Significant,2025-12-16,2025-12-17,jair.santos@plumaagro.com.br
-4-0001322639,Oracle Fusion Product Development Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-04 00:00:00,2025-12-17,rubi.velez@ninecon.com.br
-4-0001276929,Oracle Fusion Cost Management Cloud Service,Significant Impairment,Review Defect,2-Significant,2025-11-19 00:00:00,2025-12-17,larissa.amandio@ninecon.com.br
-4-0001167123,Oracle Fusion Cost Management Cloud Service,Significant Impairment,Review Defect,2-Significant,2025-10-15 00:00:00,2025-12-17,rosangela.nakano@ninecon.com.br
+4-0001606865,Oracle Fusion Performance Management Cloud Service,Significant Impairment,Closed,2-Significant,2025-12-16 00:00:00,2025-12-17,jair.santos@plumaagro.com.br
 4-0001545992,Oracle Fusion Assets Cloud Service,Significant Impairment,Closed,2-Significant,2025-12-09 00:00:00,2025-12-17,roberto.costa@ninecon.com.br
-4-0001568726,Oracle Fusion Expenses Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-11 00:00:00,2025-12-16,jean.bejes@ninecon.com.br
-4-0001231157,Oracle Fusion Self Service Procurement Cloud Service,Technical Issue,Review Update,3-Standard,2025-11-05 00:00:00,2025-12-16,vanessa.chiochetta@ninecon.com.br
-4-0001605217,Oracle Fusion Tax Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-16,2025-12-16,leonardo.guilherme@ninecon.com.br
-4-0001410523,Oracle Fusion Inventory Management Cloud Service,Technical Issue,Customer Working,3-Standard,2025-12-06 00:00:00,2025-12-16,vera.aveiro@ninecon.com.br
-4-0001606629,Oracle Fusion Tax Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-16,2025-12-16,leonardo.guilherme@ninecon.com.br
-4-0001527595,Oracle Fusion Self Service Procurement Cloud Service,Technical Issue,Customer Working,3-Standard,2025-12-09 00:00:00,2025-12-16,vera.aveiro@ninecon.com.br
-4-0001320861,Oracle Fusion Project Costing Cloud Service,Significant Impairment,Closed,2-Significant,2025-12-04 00:00:00,2025-12-16,jean.bejes@ninecon.com.br
-4-0001518456,Oracle Fusion Purchasing Cloud Service,Technical Issue,Closed,3-Standard,2025-12-09 00:00:00,2025-12-16,mateus.fetzner@plumaagro.com.br
+4-0001568726,Oracle Fusion Expenses Cloud Service,Significant Impairment,Customer Working,2-Significant,2025-12-11 00:00:00,2025-12-16 00:00:00,jean.bejes@ninecon.com.br
+4-0001605217,Oracle Fusion Tax Cloud Service,Significant Impairment,Review Update,2-Significant,2025-12-16 00:00:00,2025-12-16 00:00:00,leonardo.guilherme@ninecon.com.br
+4-0001410523,Oracle Fusion Inventory Management Cloud Service,Technical Issue,Customer Working,3-Standard,2025-12-06 00:00:00,2025-12-16 00:00:00,vera.aveiro@ninecon.com.br
+4-0001527595,Oracle Fusion Self Service Procurement Cloud Service,Technical Issue,Customer Working,3-Standard,2025-12-09 00:00:00,2025-12-16 00:00:00,vera.aveiro@ninecon.com.br
+4-0001320861,Oracle Fusion Project Costing Cloud Service,Significant Impairment,Closed,2-Significant,2025-12-04 00:00:00,2025-12-16 00:00:00,jean.bejes@ninecon.com.br
+4-0001518456,Oracle Fusion Purchasing Cloud Service,Technical Issue,Closed,3-Standard,2025-12-09 00:00:00,2025-12-16 00:00:00,mateus.fetzner@plumaagro.com.br
 4-0001325729,Oracle Fusion Inventory Management Cloud Service,Significant Impairment,Work in Progress,2-Significant,2025-12-05 00:00:00,2025-12-15 00:00:00,antonio.sobrinho@ninecon.com.br
 4-0001213719,Oracle Fusion Assets Cloud Service,Significant Impairment,Closed,2-Significant,2025-10-30 00:00:00,2025-12-15 00:00:00,ti@plumaagroavicola.com.br
 4-0001172129,Oracle Fusion Inventory Management Cloud Service,Significant Impairment,Close Initiated,2-Significant,2025-10-16 00:00:00,2025-12-15 00:00:00,jean.bejes@ninecon.com.br
-4-0001304593,Oracle Fusion Inventory Management Cloud Service,Significant Impairment,Development Working,2-Significant,2025-11-28 00:00:00,2025-12-15 00:00:00,abner.goncalves@ninecon.com.br
 4-0001291352,Oracle Data Transforms,Significant Impairment,Closed,2-Significant,2025-11-24 00:00:00,2025-12-15 00:00:00,bruno.petroveski@ninecon.com.br
 4-0001295045,Oracle Enterprise Data Management Cloud Service,Significant Impairment,Close Initiated,2-Significant,2025-11-25 00:00:00,2025-12-15 00:00:00,ti@plumaagroavicola.com.br
 4-0001239613,Latin America Cloud Local Solution (LACLS),Significant Impairment,Closed,2-Significant,2025-11-07 00:00:00,2025-12-15 00:00:00,vera.aveiro@ninecon.com.br

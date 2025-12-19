@@ -2,36 +2,11 @@ let dadosBrutos = [];
 let chartServico, chartSeveridade, chartData, chartIssueType;
 
 // ===============================
-// ✅ BADGE "Atualizado em" (lê do CSV)
-// ===============================
-function atualizarBadgeAtualizacao(dados) {
-  const el = document.getElementById("lblAtualizacaoValor");
-  if (!el) return;
-
-  // tenta pegar do CSV (coluna Gerado_em criada no processo)
-  let v = "";
-  if (Array.isArray(dados) && dados.length) {
-    v = (dados[0]["Gerado_em"] || "").trim();
-  }
-
-  // fallback: hora local do navegador
-  if (!v) {
-    try {
-      const now = new Date();
-      const pad = (n) => String(n).padStart(2, "0");
-      v = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    } catch {
-      v = "-";
-    }
-  }
-
-  el.textContent = v;
-}
-
-// ===============================
 // REGISTRO DO PLUGIN DE RÓTULOS
 // ===============================
-Chart.register(ChartDataLabels);
+if (window.Chart && window.ChartDataLabels) {
+  Chart.register(ChartDataLabels);
+}
 
 // ===============================
 // ANIMAÇÃO VISUAL DE ATUALIZAÇÃO
@@ -81,7 +56,7 @@ document.addEventListener("fullscreenchange", () => {
 });
 
 // ===============================
-// FUNÇÕES DE CONTAGEM E PARSE
+// FUNÇÕES UTILITÁRIAS
 // ===============================
 function contarPorCampo(lista, campo) {
   const mapa = {};
@@ -103,10 +78,9 @@ function parseCSV(texto) {
   const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
   if (!linhas.length) return [];
 
-  // ✅ split de cabeçalho
   const cabecalho = linhas[0].split(",").map(h => h.trim());
 
-  // ✅ remove BOM invisível do primeiro header (mata o bug das colunas "sumindo")
+  // ✅ remove BOM invisível do primeiro header
   if (cabecalho[0]) cabecalho[0] = cabecalho[0].replace(/^\uFEFF/, "");
 
   const dados = [];
@@ -120,12 +94,13 @@ function parseCSV(texto) {
       obj[key] = (cols[j] || "").replace(/^"|"$/g, "").trim();
     }
 
-    dados.push(obj);
+    // só adiciona se tiver algum valor (evita lixo no final)
+    const temValor = Object.values(obj).some(v => v && String(v).trim() !== "");
+    if (temValor) dados.push(obj);
   }
 
   return dados;
 }
-
 
 // ===============================
 // ✅ PARSE DE DATA “À PROVA DE ORACLE”
@@ -207,6 +182,44 @@ function parseDataFlex(valor) {
   return null;
 }
 
+// ===============================
+// ✅ FORMATAÇÃO pt-BR (dd/mm/yyyy, HH:MM)
+// ===============================
+function formatarDataBR(d) {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm}/${yyyy}, ${hh}:${mi}`;
+}
+
+// ===============================
+// ✅ HEADER: "Atualizado em" vindo do CSV pela coluna "Gerado em"
+// ===============================
+function atualizarHeaderAtualizadoEmPorGeradoEm(lista) {
+  const el = document.getElementById("txtAtualizadoEm");
+  if (!el) return;
+
+  // suporta pequenas variações de nome (caso alguém mude no Excel)
+  const chaves = ["Gerado em", "Gerado_em", "GeradoEm", "Gerado_em_dt", "Gerado_dt"];
+
+  let maxDate = null;
+
+  for (const item of (lista || [])) {
+    let raw = "";
+    for (const k of chaves) {
+      if (item[k]) { raw = item[k]; break; }
+    }
+    const dt = parseDataFlex(raw);
+    if (!dt) continue;
+    if (!maxDate || dt > maxDate) maxDate = dt;
+  }
+
+  el.textContent = maxDate
+    ? `⏱ Atualizado em: ${formatarDataBR(maxDate)} (BRT)`
+    : "⏱ Atualizado em: ... (BRT)";
+}
 
 // ===============================
 // FILTROS E BUSCA
@@ -241,7 +254,8 @@ function aplicarBusca(dados) {
       d["Serviço"],
       d["Issue Type"],
       d["Status"],
-      d["Contato Primário"]
+      d["Contato Primário"],
+      d["Gerado em"] // opcional: ajuda a buscar por lote/data
     ].some(campo => (campo || "").toLowerCase().includes(termo));
   });
 }
@@ -370,7 +384,7 @@ function atualizarGraficoPorSeveridade(dados) {
 }
 
 // ===============================
-// ✅ GRÁFICO: SRs por Data de Criação (POR MÊS)
+// GRÁFICO: SRs por Data de Criação (POR MÊS)
 // ===============================
 function atualizarGraficoPorData(dados) {
   const canvas = document.getElementById("graficoPorData");
@@ -544,13 +558,13 @@ function preencherFiltros() {
 }
 
 async function carregarDados() {
-  const resp = await fetch("dados_sr.csv");
+  const resp = await fetch("dados_sr.csv", { cache: "no-store" });
   const texto = await resp.text();
 
   dadosBrutos = parseCSV(texto);
 
-  // ✅ mostra data/hora de geração do CSV (se existir)
-  atualizarBadgeAtualizacao(dadosBrutos);
+  // ✅ aqui: pega do CSV na coluna "Gerado em" e joga no header
+  atualizarHeaderAtualizadoEmPorGeradoEm(dadosBrutos);
 
   preencherFiltros();
   atualizarDashboard();

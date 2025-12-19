@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gauge - Meta X Venda</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .card {
+      width: 420px;
+      border: 1px solid #e6e6e6;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    h3 { margin: 0 0 8px 0; color: #666; font-weight: 700; }
+    .info { text-align: center; margin-top: 10px; color:#777; }
+    .info .big { font-size: 18px; font-weight: 700; color:#666; }
+    .info .mid { font-size: 14px; font-weight: 700; color:#666; margin-top: 6px; }
+    .info .small { font-size: 13px; margin-top: 6px; }
+    canvas { display:block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h3>Meta X Venda</h3>
+    <canvas id="gauge" width="380" height="220"></canvas>
+
+    <div class="info">
+      <div class="big" id="realizadoTxt">Realizado R$ 75.362,07</div>
+      <div class="mid" id="atingTxt">Atingimento de Meta 0,55 %</div>
+      <div class="small" id="metaTxt">Meta R$ 13.702.500,00</div>
+    </div>
+  </div>
+
+<script>
+  // ======= CONFIG DO GAUGE =======
+  const minimo = 0;
+  const maximo = 20553.7;
+
+  // valor atual (ponteiro)
+  const valorAtual = 3500; // <-- troque aqui
+
+  // faixas (igual a imagem: vermelho, amarelo, verde/azulado)
+  const faixas = [
+    { ate: 8221.5,  cor: "#ef4444" }, // vermelho
+    { ate: 12332.2, cor: "#f59e0b" }, // amarelo
+    { ate: 20553.7, cor: "#0ea5a6" }  // teal
+  ];
+
+  // transforma faixas em "tamanhos" para o doughnut
+  const tamanhos = [];
+  const cores = [];
+  let anterior = minimo;
+  for (const f of faixas) {
+    tamanhos.push(f.ate - anterior);
+    cores.push(f.cor);
+    anterior = f.ate;
+  }
+
+  // clamp do valor (garantia)
+  const v = Math.min(Math.max(valorAtual, minimo), maximo);
+
+  // ======= PLUGIN DO PONTEIRO =======
+  const needlePlugin = {
+    id: "needlePlugin",
+    afterDatasetsDraw(chart, args, pluginOptions) {
+      const { ctx, chartArea } = chart;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta?.data?.length) return;
+
+      const xC = meta.data[0].x;
+      const yC = meta.data[0].y;
+
+      // ângulo do gauge (meia-lua)
+      const rot = chart.options.rotation;              // em rad
+      const circ = chart.options.circumference;        // em rad
+
+      const pct = (pluginOptions.value - pluginOptions.min) / (pluginOptions.max - pluginOptions.min);
+      const ang = rot + (circ * pct);
+
+      // tamanho do ponteiro
+      const radius = meta.data[0].outerRadius;
+      const needleLen = radius * 0.85;
+
+      // desenha ponteiro
+      ctx.save();
+      ctx.translate(xC, yC);
+      ctx.rotate(ang);
+
+      // haste
+      ctx.beginPath();
+      ctx.moveTo(-10, 0);
+      ctx.lineTo(needleLen, 0);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#666";
+      ctx.stroke();
+
+      // centro
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.fillStyle = "#666";
+      ctx.fill();
+
+      ctx.restore();
+
+      // ticks/labels simples (opcional)
+      // você pode remover esse bloco se não quiser números em cima
+      ctx.save();
+      ctx.fillStyle = "#9aa0a6";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "center";
+
+      const ticks = [0, 4110.75, 8221.5, 12332.2, 16443.0, 20553.7];
+      ticks.forEach(t => {
+        const p = (t - pluginOptions.min) / (pluginOptions.max - pluginOptions.min);
+        const a = rot + (circ * p);
+        const r = radius * 1.02;
+
+        const x = xC + Math.cos(a) * r;
+        const y = yC + Math.sin(a) * r;
+
+        // formata com 1 casa como na imagem (pode ajustar)
+        const txt = (t === 0) ? "0,00" : t.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+        ctx.fillText(txt, x, y);
+      });
+      ctx.restore();
+    }
+  };
+
+  // ======= CHART =======
+  const ctx = document.getElementById("gauge");
+
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Faixa 1", "Faixa 2", "Faixa 3"],
+      datasets: [{
+        data: tamanhos,
+        backgroundColor: cores,
+        borderWidth: 0,
+        cutout: "70%"
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+
+      // meia-lua
+      rotation: -Math.PI,       // começa na esquerda
+      circumference: Math.PI,   // só metade
+
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+        needlePlugin: {
+          value: v,
+          min: minimo,
+          max: maximo
+        }
+      }
+    },
+    plugins: [needlePlugin]
+  });
+
+  // ======= TEXTOS (exemplo) =======
+  const realizado = 75362.07;
+  const meta = 13702500.00;
+  const ating = (realizado / meta) * 100;
+
+  document.getElementById("realizadoTxt").textContent =
+    "Realizado " + realizado.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+
+  document.getElementById("atingTxt").textContent =
+    "Atingimento de Meta " + ating.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + " %";
+
+  document.getElementById("metaTxt").textContent =
+    "Meta " + meta.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+</script>
+
+</body>
+</html>

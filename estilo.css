@@ -169,3 +169,49 @@ body {
     min-height: 460px;
   }
 }
+
+/* =====================================================
+   ✅ CORREÇÃO MOBILE (SOMENTE INDEX) – bug do celular
+   - libera rolagem vertical no index
+   - evita “tela travada”
+   - tabela ganha scroll horizontal no mobile
+   ===================================================== */
+@media (max-width: 768px) {
+
+  /* só no index */
+  body.page-index {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto;
+  }
+
+  body.page-index .app-wrapper {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  body.page-index .dashboard-main {
+    overflow: visible !important;
+  }
+
+  body.page-index .conteudo-row {
+    overflow: visible !important;
+  }
+
+  /* tabela: scroll horizontal no mobile */
+  body.page-index .tabela-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: none; /* no mobile, deixa crescer e rolar a página */
+  }
+
+  /* dá um mínimo de largura pra tabela não “amassar” */
+  body.page-index .tabela-container table {
+    min-width: 980px;
+  }
+
+  /* opcional: melhora toque nos botões */
+  body.page-index .pl-header .btn {
+    margin-bottom: 2px;
+  }
+}

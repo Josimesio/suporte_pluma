@@ -7,3 +7,6 @@ MOSSrSearchExport.csv
 # Python
 __pycache__/
 *.pyc
+# Ambiente virtual Python
+.venv/
+venv/

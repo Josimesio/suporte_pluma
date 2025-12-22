@@ -8,7 +8,6 @@
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
     crossorigin="anonymous"
   />
 
@@ -22,30 +21,29 @@
   <div class="app-wrapper d-flex flex-column">
 
     <!-- HEADER -->
-    <header class="pl-header">
-      <div class="container-fluid">
-        <div class="row align-items-center g-2">
-          <div class="col-md-7">
-            <h1 class="mb-0">Chamados 2025 - ORACLE</h1>
-            <p class="mb-0">Programa Conecta • Grupo Pluma</p>
-
-            <!-- ✅ NOVO: atualizado em (vem do CSV coluna "Gerado em") -->
-            <p class="mb-0 small opacity-75" id="txtAtualizadoEm">⏱ Atualizado em: ... (BRT)</p>
-          </div>
-
-          <div class="col-md-3 text-md-end text-center d-flex gap-2 justify-content-md-end justify-content-center">
-            <a class="btn btn-sm btn-light" href="top-modulos.html">🧩 Top Módulos</a>
-            <a class="btn btn-sm btn-light" href="top-contatos.html">👤 Top Contatos</a>
-            <a class="btn btn-sm btn-light" href="graficos.html">📊 Gráficos</a>
-            <button id="btnTvMode" class="btn btn-sm btn-outline-light">🎬 Modo TV</button>
-          </div>
-
-          <div class="col-md-2 text-md-end text-center">
-            <img src="logo-conecta.png" alt="Logo Programa Conecta" class="logo-conecta img-fluid">
-          </div>
-        </div>
+   <header class="pl-header">
+  <div class="container-fluid">
+    <div class="row align-items-center g-2">
+      <div class="col-md-7">
+        <h1 class="mb-0">Chamados 2025 - ORACLE</h1>
+        <p class="mb-0">Programa Conecta • Grupo Pluma</p>
+        <p class="mb-0 small" id="txtAtualizadoEm">⏱ Atualizado em: ...</p>
       </div>
-    </header>
+
+      <div class="col-md-3 text-md-end text-center d-flex gap-2 justify-content-md-end justify-content-center">
+        <a class="btn btn-sm btn-light" href="top-modulos.html">🧩 Top Módulos</a>
+        <a class="btn btn-sm btn-light" href="top-contatos.html">👤 Top Contatos</a>
+        <a class="btn btn-sm btn-light" href="graficos.html">📊 Gráficos</a>
+        <button id="btnTvMode" class="btn btn-sm btn-outline-light">🎬 Modo TV</button>
+      </div>
+
+      <div class="col-md-2 text-md-end text-center">
+        <img src="logo-conecta.png" alt="Logo Programa Conecta" class="logo-conecta img-fluid">
+      </div>
+    </div>
+  </div>
+</header>
+
 
     <main class="dashboard-main flex-grow-1 d-flex flex-column">
 
@@ -127,6 +125,7 @@
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -173,12 +172,7 @@
     </footer>
   </div>
 
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYF0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"
-  ></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
   <script src="dashboard.js"></script>
 </body>
-</html> 
+</html>

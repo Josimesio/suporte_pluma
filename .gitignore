@@ -1,0 +1,9 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+# Arquivos sensíveis / locais
+credenciais.py
+automacao.py
+MOSSrSearchExport.csv
+
+# Python
+__pycache__/
+*.pyc

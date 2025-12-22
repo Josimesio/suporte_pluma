@@ -20,6 +20,85 @@
 
   const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
+
+  // ===== Traduções (Serviço/Status/Severidade) – mantém o padrão do CSV e só "humaniza" a exibição
+  const MAP_SERVICO_PT = {
+    "Oracle Fusion Cost Management Cloud Service": "Oracle Fusion Gestão de Custos – Serviço em Nuvem",
+    "Oracle Integration 3": "Oracle Integration 3 – Integração",
+    "Oracle Supply Planning Cloud Service": "Oracle Planejamento de Suprimentos – Serviço em Nuvem",
+    "Oracle Fusion Expenses Cloud Service": "Oracle Fusion Despesas – Serviço em Nuvem",
+    "Oracle Fusion Purchasing Cloud Service": "Oracle Fusion Compras – Serviço em Nuvem",
+    "Oracle Fusion Project Costing Cloud Service": "Oracle Fusion Custos de Projetos – Serviço em Nuvem",
+    "Oracle Fusion Inventory Management Cloud Service": "Oracle Fusion Gestão de Estoque – Serviço em Nuvem",
+    "Oracle Fusion Performance Management Cloud Service": "Oracle Fusion Gestão de Performance (EPM) – Serviço em Nuvem",
+    "Oracle Data Transforms": "Oracle Transformações de Dados (Data Transforms)",
+    "Oracle Fusion Product Development Cloud Service": "Oracle Fusion Desenvolvimento de Produto – Serviço em Nuvem",
+    "Oracle Enterprise Data Management Cloud Service": "Oracle Gestão de Dados Corporativos (EDM) – Serviço em Nuvem",
+    "Oracle Fusion Tax Cloud Service": "Oracle Fusion Fiscal/Impostos – Serviço em Nuvem",
+    "OCI Application Performance Monitoring Service": "OCI Monitoramento de Performance de Aplicações (APM)",
+    "Oracle Fusion Order Management Cloud Service": "Oracle Fusion Gestão de Pedidos – Serviço em Nuvem",
+    "Oracle Fusion Receivables Cloud Service": "Oracle Fusion Contas a Receber – Serviço em Nuvem",
+    "Oracle Fusion Self Service Procurement Cloud Service": "Oracle Fusion Compras Self-Service – Serviço em Nuvem",
+    "Latin America Cloud Local Solution (LACLS)": "Solução Local América Latina (LACLS)",
+    "Oracle Fusion Assets Cloud Service": "Oracle Fusion Ativos (FA) – Serviço em Nuvem",
+    "Autonomous Database Serverless": "Banco de Dados Autônomo (Serverless)",
+    "Oracle Transportation Management Cloud Service": "Oracle Gestão de Transporte (OTM) – Serviço em Nuvem",
+    "Oracle APEX in Cloud": "Oracle APEX na Nuvem",
+    "Oracle Cloud Infrastructure - API Gateway": "OCI – API Gateway",
+    "Oracle Fusion Global Human Resources Cloud Service": "Oracle Fusion Recursos Humanos Global (HCM) – Serviço em Nuvem",
+    "Oracle Fusion Product Hub Cloud Service": "Oracle Fusion Central de Produtos (Product Hub) – Serviço em Nuvem",
+    "Oracle Fusion Financials for the Americas": "Oracle Fusion Financeiro para as Américas",
+    "Oracle Fusion Financials Common Module Cloud Service": "Oracle Fusion Financeiro – Módulo Comum – Serviço em Nuvem",
+    "Oracle Fusion Procurement Contracts Cloud Service": "Oracle Fusion Contratos de Compras – Serviço em Nuvem"
+  };
+
+  const MAP_STATUS_PT = {
+    "review defect": "Revisão de Defeito",
+    "review update": "Revisão de Atualização",
+    "customer working": "Cliente em Ação",
+    "development working": "Desenvolvimento em Ação",
+    "work in progress": "Em Andamento",
+    "solution offered": "Solução Oferecida",
+    "close requested": "Fechamento Solicitado",
+    "closed": "Fechado",
+    "resolved": "Resolvido"
+  };
+
+  const MAP_SEVERIDADE_PT = {
+    "1-critical": "1-Crítica",
+    "2-significant": "2-Significativa",
+    "3-standard": "3-Padrão"
+  };
+
+  function normKey(v) {
+    return String(v || "").trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function traduzirValor(valor, mapa) {
+    const k = normKey(valor);
+    return (k && mapa[k]) ? mapa[k] : valor;
+  }
+
+  function traduzirDadosEmMemoria(lista) {
+    (lista || []).forEach(r => {
+      // preserva original para depuração (não aparece na tela)
+      if (r["Serviço"] && !r.__servico_original) r.__servico_original = r["Serviço"];
+      if (r["Servico"] && !r.__servico_original) r.__servico_original = r["Servico"];
+      if (r["Status"] && !r.__status_original) r.__status_original = r["Status"];
+      if (r["Severidade"] && !r.__severidade_original) r.__severidade_original = r["Severidade"];
+
+      // Serviço (com e sem acento)
+      if (r["Serviço"]) r["Serviço"] = MAP_SERVICO_PT[r["Serviço"]] || r["Serviço"];
+      if (r["Servico"]) r["Servico"] = MAP_SERVICO_PT[r["Servico"]] || r["Servico"];
+
+      // Status / Severidade (case-insensitive)
+      if (r["Status"]) r["Status"] = traduzirValor(r["Status"], MAP_STATUS_PT);
+      if (r["Severidade"]) r["Severidade"] = traduzirValor(r["Severidade"], MAP_SEVERIDADE_PT);
+    });
+    return lista;
+  }
+
+
   /* ===== DOM ===== */
   const el = (id) => document.getElementById(id);
 
@@ -93,7 +172,14 @@
 
   function isFechado(status) {
     const s = String(status || "").toLowerCase();
-    return s.includes("closed") || s.includes("resolved") || s.includes("close requested");
+    return (
+      s.includes("closed") ||
+      s.includes("resolved") ||
+      s.includes("close requested") ||
+      s.includes("fechado") ||
+      s.includes("resolvido") ||
+      s.includes("fechamento solicitado")
+    );
   }
 
   function contarPorCampo(lista, campo) {
@@ -393,7 +479,7 @@ function atualizarGraficoServico(lista) {
   fetch("dados_sr.csv", { cache: "no-store" })
     .then(r => r.text())
     .then(texto => {
-      dados = parseCSV(texto);
+      dados = traduzirDadosEmMemoria(parseCSV(texto));
 
       atualizarAtualizadoEm(dados); // 👈 única chamada nova
 

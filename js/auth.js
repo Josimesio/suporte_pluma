@@ -211,8 +211,18 @@
       });
 
       if (error) {
-        return { sucesso: false, erro: "credenciais", mensagem: "E-mail ou senha inválidos." };
+        console.error("Erro real do Supabase no login:", error);
+
+        return {
+          sucesso: false,
+          erro: "credenciais",
+          mensagem: error.message || "Falha ao autenticar."
+        };
       }
+
+
+
+
 
       usuarioSessao = data.user;
       await carregarSessao();
@@ -322,8 +332,8 @@
   ocultarPagina();
   window.plumaAuthPronto = ehPaginaAutenticacao()
     ? iniciarCliente().then(exibirPagina).catch(erro => {
-        console.error(erro);
-        exibirPagina();
-      })
+      console.error(erro);
+      exibirPagina();
+    })
     : protegerPagina(PAGINA_LOGIN);
 })();

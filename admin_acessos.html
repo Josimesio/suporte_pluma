@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin de Acessos - Suporte ORACLE</title>
+  <script src="js/supabase-config.js?v=20260717-2"></script>
+  <script src="js/traducao.js?v=20260717-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js?v=20260717-supabase-7"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilo.css?v=20260427-2">
+  <style>
+    body { overflow-y: auto !important; }
+    .dashboard-main { overflow: visible !important; }
+    .admin-card { border-left: 4px solid var(--pl-amarelo); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .table td, .table th { vertical-align: middle; }
+    dialog::backdrop { background: rgba(6,43,87,.68); }
+    .lista-resumo { max-width: 310px; white-space: normal; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper d-flex flex-column">
+  <header class="pl-header py-3">
+    <div class="container-fluid">
+      <div class="row align-items-center g-2">
+        <div class="col-md-7">
+          <h1 class="mb-0">Admin de Acessos</h1>
+          <p class="mb-0">Programa Conecta • Suporte ORACLE</p>
+          <small class="text-light opacity-75">Usuários e perfis controlados pelo Supabase</small>
+        </div>
+        <div class="col-md-5 text-md-end text-center">
+          <div class="d-flex align-items-center justify-content-md-end justify-content-center gap-2 flex-wrap">
+            <img src="img/logo-conecta.png" alt="Conecta" style="height:36px">
+            <a class="btn btn-sm btn-light" href="index.html">🏠 Voltar</a>
+            <button class="btn btn-sm btn-outline-light" type="button" onclick="fazerLogout()">🚪 Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-main py-3">
+    <div class="container-fluid">
+      <div id="mensagem" class="alert alert-info py-2">Carregando usuários...</div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3">
+          <div class="card pl-card-kpi text-center"><div class="card-body py-2">
+            <div class="card-title">Usuários</div><div class="kpi-valor" id="kpiUsuarios">-</div>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card pl-card-kpi text-center"><div class="card-body py-2">
+            <div class="card-title">Ativos</div><div class="kpi-valor" id="kpiAtivos">-</div>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card pl-card-kpi text-center"><div class="card-body py-2">
+            <div class="card-title">Solicitações pendentes</div><div class="kpi-valor" id="kpiSolicitacoes">-</div>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card pl-card-kpi text-center"><div class="card-body py-2">
+            <div class="card-title">Administradores</div><div class="kpi-valor" id="kpiAdmins">-</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="card admin-card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+            <div>
+              <h2 class="h6 mb-1">Importar dados Oracle</h2>
+              <div class="small text-muted">Selecione o ano e envie o CSV. Registros com o mesmo número de SR serão atualizados.</div>
+            </div>
+            <span class="badge text-bg-success">Somente administrador</span>
+          </div>
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-2">
+              <label for="anoImportacao" class="form-label">Ano dos dados</label>
+              <select id="anoImportacao" class="form-select">
+                <option value="2025">2025</option><option value="2026" selected>2026</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-7">
+              <label for="arquivoImportacao" class="form-label">Arquivo CSV</label>
+              <input id="arquivoImportacao" class="form-control" type="file" accept=".csv,text/csv">
+            </div>
+            <div class="col-12 col-md-3 d-grid">
+              <button id="btnImportarCsv" class="btn btn-success" type="button" onclick="importarCsvOracle()">⬆️ Enviar ao Supabase</button>
+            </div>
+          </div>
+          <div class="progress mt-3 d-none" id="progressoImportacao" role="progressbar" aria-label="Progresso da importação">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" id="barraImportacao" style="width:0%">0%</div>
+          </div>
+          <div id="resultadoImportacao" class="small mt-2" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="card admin-card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+            <div>
+              <h2 class="h6 mb-1">Solicitações de acesso</h2>
+              <div class="small text-muted">Analise a necessidade, escolha o perfil e confirme as permissões.</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="carregarSolicitacoes()">🔄 Atualizar</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-striped table-hover table-sm align-middle mb-0">
+              <thead><tr><th>Solicitante</th><th>Setor / Cargo</th><th>Gestor</th><th>Motivo</th><th>Data</th><th>Status</th><th>Ação</th></tr></thead>
+              <tbody id="tbodySolicitacoes"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card admin-card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+            <div>
+              <h2 class="h6 mb-1">Solicitações de analítico de chamado</h2>
+              <div class="small text-muted">Atenda uma solicitação por SR e devolva o analítico ao e-mail do usuário.</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="carregarSolicitacoesAnalitico()">🔄 Atualizar</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-striped table-hover table-sm align-middle mb-0">
+              <thead><tr><th>Solicitante</th><th>SR / Ano</th><th>Motivo</th><th>Solicitado em</th><th>Status</th><th>Ação</th></tr></thead>
+              <tbody id="tbodySolicitacoesAnalitico"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card admin-card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+            <div>
+              <h2 class="h6 mb-1">Usuários cadastrados</h2>
+              <div class="small text-muted">Altere o nome, perfil ou status e clique em Salvar.</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="carregarUsuarios()">🔄 Atualizar</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-striped table-hover table-sm align-middle mb-0">
+              <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Permissões</th><th>Criado em</th><th>Ação</th></tr></thead>
+              <tbody id="tbodyUsuarios"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog id="dialogPermissoes" style="width:min(720px,calc(100% - 30px));border:0;border-radius:12px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div class="p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div><h2 class="h5 mb-1">Permissões do usuário</h2><div id="usuarioPermissoes" class="text-muted small"></div></div>
+      <button class="btn-close" type="button" onclick="fecharPermissoes()" aria-label="Fechar"></button>
+    </div>
+    <div id="listaPermissoes" class="row g-2"></div>
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <button class="btn btn-outline-secondary" type="button" onclick="fecharPermissoes()">Cancelar</button>
+      <button class="btn btn-success" id="btnSalvarPermissoes" type="button" onclick="salvarPermissoes()">Salvar permissões</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dialogSolicitacao" style="width:min(900px,calc(100% - 30px));border:0;border-radius:12px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div class="p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div><h2 class="h5 mb-1">Analisar solicitação</h2><div id="solicitanteResumo" class="text-muted small"></div></div>
+      <button class="btn-close" type="button" onclick="fecharSolicitacao()" aria-label="Fechar"></button>
+    </div>
+    <div id="detalhesSolicitacao" class="border rounded p-3 mb-3"></div>
+    <div class="row g-3">
+      <div class="col-md-5">
+        <label for="perfilSolicitacao" class="form-label fw-bold">Perfil a conceder</label>
+        <select id="perfilSolicitacao" class="form-select">
+          <option value="consulta">Consulta</option><option value="analista">Analista</option>
+          <option value="gestor">Gestor</option><option value="administrador">Administrador</option>
+        </select>
+      </div>
+      <div class="col-md-7">
+        <label for="observacaoSolicitacao" class="form-label fw-bold">Observação da análise</label>
+        <input id="observacaoSolicitacao" class="form-control" maxlength="500">
+      </div>
+    </div>
+    <div class="fw-bold mt-3 mb-2">Permissões finais</div>
+    <div id="permissoesSolicitacao" class="row g-2"></div>
+    <div class="alert alert-warning mt-3 mb-0 py-2">
+      Para aprovar, o e-mail precisa existir em <strong>Authentication → Users</strong>. Se ainda não existir, convide-o primeiro e volte para aprovar.
+    </div>
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <button class="btn btn-outline-secondary" type="button" onclick="fecharSolicitacao()">Cancelar</button>
+      <button class="btn btn-danger" id="btnRecusarSolicitacao" type="button" onclick="analisarSolicitacao('recusado')">Recusar</button>
+      <button class="btn btn-success" id="btnAprovarSolicitacao" type="button" onclick="analisarSolicitacao('aprovado')">Aprovar e liberar</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dialogAnalitico" style="width:min(760px,calc(100% - 30px));border:0;border-radius:12px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div class="p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div><h2 class="h5 mb-1">Atender solicitação de analítico</h2><div id="analiticoResumoAdmin" class="text-muted small"></div></div>
+      <button class="btn-close" type="button" onclick="fecharAnaliticoAdmin()" aria-label="Fechar"></button>
+    </div>
+    <div id="analiticoDetalhesAdmin" class="border rounded p-3 mb-3"></div>
+    <label for="respostaAnaliticoAdmin" class="form-label fw-bold">Resumo da devolutiva</label>
+    <textarea id="respostaAnaliticoAdmin" class="form-control" rows="4" maxlength="3000" placeholder="Registre o resumo do analítico ou da orientação enviada ao usuário."></textarea>
+    <div class="alert alert-info py-2 mt-3 mb-0">O botão <strong>Abrir e-mail</strong> prepara a mensagem no aplicativo de e-mail do computador. Depois do envio, clique em <strong>Marcar como enviado</strong>.</div>
+    <div class="d-flex justify-content-end gap-2 flex-wrap mt-4">
+      <button class="btn btn-outline-secondary" type="button" onclick="fecharAnaliticoAdmin()">Fechar</button>
+      <button class="btn btn-outline-primary" id="btnEmAtendimentoAnalitico" type="button" onclick="atualizarAnaliticoAdmin('em_atendimento')">Assumir atendimento</button>
+      <button class="btn btn-primary" type="button" onclick="abrirEmailAnaliticoAdmin()">✉️ Abrir e-mail</button>
+      <button class="btn btn-success" id="btnEnviadoAnalitico" type="button" onclick="atualizarAnaliticoAdmin('enviado')">Marcar como enviado</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const perfisPermitidos = ["administrador", "analista", "gestor", "consulta"];
+  const permissoesDisponiveis = [
+    ["sr_corte", "SR por período"],
+    ["chamados_2025", "Chamados 2025"], ["indicadores_2025", "Indicadores anuais 2025"], ["graficos_2025", "Gráficos 2025"],
+    ["top_modulos_2025", "Top Módulos 2025"], ["top_contatos_2025", "Top Contatos 2025"], ["sla_2025", "SLA 2025"],
+    ["chamados_2026", "Chamados 2026"], ["indicadores_2026", "Indicadores anuais 2026"], ["graficos_2026", "Gráficos 2026"],
+    ["top_modulos_2026", "Top Módulos 2026"], ["top_contatos_2026", "Top Contatos 2026"], ["sla_2026", "SLA 2026"]
+  ];
+  let usuarioEditandoPermissoes = null;
+  let solicitacaoEditando = null;
+  let analiticoEditando = null;
+
+  function escapar(valor) {
+    const el = document.createElement("div");
+    el.textContent = valor == null ? "" : String(valor);
+    return el.innerHTML;
+  }
+
+  function formatarData(valor) {
+    if (!valor) return "-";
+    return new Date(valor).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  }
+
+  function classeStatusAnalitico(status) {
+    return status === "pendente" ? "text-bg-warning" : status === "em_atendimento" ? "text-bg-primary" : status === "enviado" ? "text-bg-success" : "text-bg-secondary";
+  }
+
+  function rotuloStatusAnalitico(status) {
+    return ({ pendente: "Pendente", em_atendimento: "Em atendimento", enviado: "Enviado", cancelado: "Cancelado" })[status] || status;
+  }
+
+  async function carregarSolicitacoesAnalitico() {
+    const autorizado = await protegerPaginaAdminAcessos("index.html");
+    if (!autorizado) return;
+    const corpo = document.getElementById("tbodySolicitacoesAnalitico");
+    corpo.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Carregando...</td></tr>';
+
+    const supabase = await obterClienteSupabase();
+    const { data, error } = await supabase.from("solicitacoes_analitico")
+      .select("id,solicitante_email,solicitante_nome,numero_sr,ano,motivo,status,resposta_administrador,criado_em,respondido_em")
+      .order("criado_em", { ascending: false });
+
+    if (error) {
+      corpo.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">${escapar(error.message)}</td></tr>`;
+      return;
+    }
+    corpo.innerHTML = data.length ? data.map(item => `
+      <tr>
+        <td><strong>${escapar(item.solicitante_nome || item.solicitante_email)}</strong><div class="small text-muted">${escapar(item.solicitante_email)}</div></td>
+        <td><strong>${escapar(item.numero_sr)}</strong><div class="small text-muted">${item.ano}</div></td>
+        <td class="lista-resumo">${escapar(item.motivo)}</td>
+        <td>${formatarData(item.criado_em)}</td>
+        <td><span class="badge ${classeStatusAnalitico(item.status)}">${rotuloStatusAnalitico(item.status)}</span></td>
+        <td><button class="btn btn-sm btn-primary" type="button" onclick="abrirAnaliticoAdmin(decodeURIComponent('${encodeURIComponent(JSON.stringify(item))}'))">${item.status === "enviado" ? "Consultar" : "Atender"}</button></td>
+      </tr>`).join("") : '<tr><td colspan="6" class="text-center text-muted py-3">Nenhuma solicitação de analítico.</td></tr>';
+  }
+
+  function abrirAnaliticoAdmin(dadosTexto) {
+    analiticoEditando = JSON.parse(dadosTexto);
+    document.getElementById("analiticoResumoAdmin").textContent = `${analiticoEditando.numero_sr} • ${analiticoEditando.solicitante_email}`;
+    document.getElementById("analiticoDetalhesAdmin").innerHTML = `
+      <div class="row g-2"><div class="col-md-6"><strong>Solicitante:</strong> ${escapar(analiticoEditando.solicitante_nome || "-")}</div>
+      <div class="col-md-3"><strong>Ano:</strong> ${analiticoEditando.ano}</div><div class="col-md-3"><strong>Status:</strong> ${rotuloStatusAnalitico(analiticoEditando.status)}</div>
+      <div class="col-12"><strong>Motivo:</strong> ${escapar(analiticoEditando.motivo)}</div></div>`;
+    document.getElementById("respostaAnaliticoAdmin").value = analiticoEditando.resposta_administrador || "";
+    document.getElementById("btnEmAtendimentoAnalitico").disabled = analiticoEditando.status === "enviado";
+    document.getElementById("btnEnviadoAnalitico").disabled = analiticoEditando.status === "enviado";
+    document.getElementById("dialogAnalitico").showModal();
+  }
+
+  function fecharAnaliticoAdmin() {
+    document.getElementById("dialogAnalitico").close();
+    analiticoEditando = null;
+  }
+
+  function abrirEmailAnaliticoAdmin() {
+    if (!analiticoEditando) return;
+    const resposta = document.getElementById("respostaAnaliticoAdmin").value.trim();
+    const assunto = `Analítico do chamado ${analiticoEditando.numero_sr}`;
+    const corpo = `Olá, ${analiticoEditando.solicitante_nome || ""}.\n\nSegue a devolutiva da TI referente ao chamado ${analiticoEditando.numero_sr}:\n\n${resposta || "[Inclua aqui o analítico do chamado]"}\n\nAtenciosamente,\nTI - Grupo Pluma`;
+    window.location.href = `mailto:${encodeURIComponent(analiticoEditando.solicitante_email)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+  }
+
+  async function atualizarAnaliticoAdmin(status) {
+    if (!analiticoEditando) return;
+    const resposta = document.getElementById("respostaAnaliticoAdmin").value.trim();
+    if (status === "enviado" && !resposta) {
+      alert("Registre o resumo da devolutiva antes de marcar como enviado.");
+      return;
+    }
+    if (status === "enviado" && !confirm("Confirma que a devolutiva foi enviada por e-mail ao usuário?")) return;
+
+    const supabase = await obterClienteSupabase();
+    const { error } = await supabase.rpc("atualizar_solicitacao_analitico", { p_id: analiticoEditando.id, p_status: status, p_resposta: resposta || null });
+    if (error) return alert(`Não foi possível atualizar: ${error.message}`);
+    fecharAnaliticoAdmin();
+    mostrarMensagem(status === "enviado" ? "Solicitação marcada como enviada." : "Solicitação assumida pela TI.", "success");
+    await carregarSolicitacoesAnalitico();
+  }
+
+  function mostrarMensagem(texto, tipo = "info") {
+    const el = document.getElementById("mensagem");
+    el.className = `alert alert-${tipo} py-2`;
+    el.textContent = texto;
+  }
+
+  function detectarDelimitadorCsv(texto) {
+    const primeiraLinha = String(texto || "").replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] || "";
+    let virgulas = 0, pontosVirgula = 0, entreAspas = false;
+    for (const caractere of primeiraLinha) {
+      if (caractere === '"') entreAspas = !entreAspas;
+      else if (!entreAspas && caractere === ',') virgulas++;
+      else if (!entreAspas && caractere === ';') pontosVirgula++;
+    }
+    return pontosVirgula > virgulas ? ';' : ',';
+  }
+
+  function analisarCsv(texto) {
+    const conteudo = String(texto || "").replace(/^\uFEFF/, "");
+    const delimitador = detectarDelimitadorCsv(conteudo);
+    const linhas = [];
+    let linha = [], campo = "", entreAspas = false;
+
+    for (let indice = 0; indice < conteudo.length; indice++) {
+      const caractere = conteudo[indice];
+      if (caractere === '"') {
+        if (entreAspas && conteudo[indice + 1] === '"') {
+          campo += '"';
+          indice++;
+        } else {
+          entreAspas = !entreAspas;
+        }
+      } else if (caractere === delimitador && !entreAspas) {
+        linha.push(campo.trim()); campo = "";
+      } else if ((caractere === '\n' || caractere === '\r') && !entreAspas) {
+        if (caractere === '\r' && conteudo[indice + 1] === '\n') indice++;
+        linha.push(campo.trim()); campo = "";
+        if (linha.some(valor => valor !== "")) linhas.push(linha);
+        linha = [];
+      } else {
+        campo += caractere;
+      }
+    }
+    linha.push(campo.trim());
+    if (linha.some(valor => valor !== "")) linhas.push(linha);
+    if (linhas.length < 2) throw new Error("O CSV não possui registros para importar.");
+
+    const cabecalhos = linhas[0].map(valor => valor.trim());
+    return linhas.slice(1).map(colunas => {
+      const registro = {};
+      cabecalhos.forEach((cabecalho, indice) => { registro[cabecalho] = colunas[indice] || ""; });
+      return registro;
+    });
+  }
+
+  function normalizarCabecalho(valor) {
+    return String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .trim().toLowerCase().replace(/[_\s]+/g, " ");
+  }
+
+  function obterCampo(registro, nomes) {
+    const campos = new Map(Object.entries(registro).map(([chave, valor]) => [normalizarCabecalho(chave), valor]));
+    for (const nome of nomes) {
+      const valor = campos.get(normalizarCabecalho(nome));
+      if (valor != null && String(valor).trim() !== "") return String(valor).trim();
+    }
+    return null;
+  }
+
+  function converterChamado(registro, ano, usuarioId) {
+    const numeroSr = obterCampo(registro, ["Número SR", "Numero SR", "SR Number", "SR"]);
+    if (!numeroSr) return null;
+    return {
+      ano,
+      numero_sr: numeroSr,
+      resumo: obterCampo(registro, ["Summary", "Resumo"]),
+      issue_type: obterCampo(registro, ["Issue Type", "Issue Type ", "Tipo"]),
+      servico: obterCampo(registro, ["Serviço", "Servico", "Service"]),
+      status: obterCampo(registro, ["Status"]),
+      severidade: obterCampo(registro, ["Severidade", "Severity"]),
+      criado_texto: obterCampo(registro, ["Criado_dt", "Criado", "Created"]),
+      atualizado_texto: obterCampo(registro, ["Atualizado_dt", "Atualizado", "Updated"]),
+      fechado_texto: obterCampo(registro, ["Closed", "Fechado"]),
+      contato_primario: obterCampo(registro, ["Contato Primário", "Contato Primario", "Primary Contact"]),
+      grupo_usuario: obterCampo(registro, ["User Group Name", "Grupo do usuário"]),
+      tenancy: obterCampo(registro, ["Tenancy"]),
+      impacto_negocio: obterCampo(registro, ["Business Impact", "Impacto no negócio"]),
+      conta: obterCampo(registro, ["Account", "Conta"]),
+      referencia_cliente: obterCampo(registro, ["Customer Reference", "Referência do cliente"]),
+      criado_por: obterCampo(registro, ["Created By", "Criado por"]),
+      atualizado_por: obterCampo(registro, ["Updated By", "Atualizado por"]),
+      url_recurso: obterCampo(registro, ["Resource Url", "URL do recurso"]),
+      gerado_em_texto: obterCampo(registro, ["Gerado em", "Gerado_em"]),
+      dados_originais: registro,
+      importado_em: new Date().toISOString(),
+      importado_por: usuarioId
+    };
+  }
+
+  function atualizarProgressoImportacao(percentual) {
+    const progresso = document.getElementById("progressoImportacao");
+    const barra = document.getElementById("barraImportacao");
+    progresso.classList.remove("d-none");
+    barra.style.width = `${percentual}%`;
+    barra.textContent = `${percentual}%`;
+  }
+
+  async function importarCsvOracle() {
+    const arquivo = document.getElementById("arquivoImportacao").files[0];
+    const ano = Number(document.getElementById("anoImportacao").value);
+    const resultado = document.getElementById("resultadoImportacao");
+    const botao = document.getElementById("btnImportarCsv");
+
+    if (!arquivo) {
+      resultado.className = "small mt-2 text-danger";
+      resultado.textContent = "Selecione um arquivo CSV.";
+      return;
+    }
+    if (!arquivo.name.toLowerCase().endsWith(".csv")) {
+      resultado.className = "small mt-2 text-danger";
+      resultado.textContent = "O arquivo precisa ter a extensão .csv.";
+      return;
+    }
+
+    botao.disabled = true;
+    resultado.className = "small mt-2 text-primary";
+    resultado.textContent = "Lendo e validando o arquivo...";
+    atualizarProgressoImportacao(0);
+
+    try {
+      const registrosCsv = analisarCsv(await arquivo.text());
+      const supabase = await obterClienteSupabase();
+      const { data: dadosUsuario, error: erroUsuario } = await supabase.auth.getUser();
+      if (erroUsuario || !dadosUsuario.user) throw new Error("Sessão do administrador não localizada.");
+
+      const unicos = new Map();
+      let ignorados = 0;
+      registrosCsv.forEach(registro => {
+        const chamado = converterChamado(registro, ano, dadosUsuario.user.id);
+        if (!chamado) ignorados++;
+        else unicos.set(chamado.numero_sr, chamado);
+      });
+      const chamados = [...unicos.values()];
+      if (!chamados.length) throw new Error("Nenhuma coluna de número de SR foi localizada no CSV.");
+
+      const tamanhoLote = 300;
+      for (let inicio = 0; inicio < chamados.length; inicio += tamanhoLote) {
+        const lote = chamados.slice(inicio, inicio + tamanhoLote);
+        const { error } = await supabase.from("chamados_oracle")
+          .upsert(lote, { onConflict: "ano,numero_sr" });
+        if (error) throw error;
+        atualizarProgressoImportacao(Math.round(Math.min(inicio + lote.length, chamados.length) / chamados.length * 100));
+      }
+
+      resultado.className = "small mt-2 text-success fw-bold";
+      resultado.textContent = `${chamados.length} chamados de ${ano} enviados ao Supabase. ${ignorados ? `${ignorados} linhas sem número de SR foram ignoradas.` : ""}`;
+      document.getElementById("arquivoImportacao").value = "";
+    } catch (error) {
+      console.error("Falha na importação:", error);
+      resultado.className = "small mt-2 text-danger fw-bold";
+      resultado.textContent = `Não foi possível importar: ${error.message}`;
+    } finally {
+      botao.disabled = false;
+    }
+  }
+
+  async function carregarSolicitacoes() {
+    const autorizado = await protegerPaginaAdminAcessos("index.html");
+    if (!autorizado) return;
+
+    const supabase = await obterClienteSupabase();
+    const { data, error } = await supabase
+      .from("solicitacoes_acesso")
+      .select("id,email,setor,gestor,cargo,motivo,prazo_tipo,prazo_ate,status,criado_em,observacao")
+      .order("criado_em", { ascending: false });
+
+    if (error) {
+      mostrarMensagem(`Não foi possível carregar as solicitações: ${error.message}`, "danger");
+      return;
+    }
+
+    document.getElementById("kpiSolicitacoes").textContent = data.filter(item => item.status === "pendente").length;
+    const corpo = document.getElementById("tbodySolicitacoes");
+    corpo.innerHTML = data.length ? data.map(item => `
+      <tr>
+        <td><strong>${escapar(item.email)}</strong></td>
+        <td>${escapar(item.setor)}<div class="small text-muted">${escapar(item.cargo)}</div></td>
+        <td>${escapar(item.gestor)}</td>
+        <td class="lista-resumo">${escapar(item.motivo || "-")}</td>
+        <td>${formatarData(item.criado_em)}</td>
+        <td><span class="badge ${item.status === "pendente" ? "text-bg-warning" : item.status === "aprovado" ? "text-bg-success" : "text-bg-secondary"}">${escapar(item.status)}</span></td>
+        <td><button class="btn btn-sm btn-primary" type="button" onclick="abrirSolicitacao(decodeURIComponent('${encodeURIComponent(JSON.stringify(item))}'))" ${item.status !== "pendente" ? "disabled" : ""}>Analisar</button></td>
+      </tr>`).join("") : '<tr><td colspan="7" class="text-center text-muted py-3">Nenhuma solicitação encontrada.</td></tr>';
+  }
+
+  function abrirSolicitacao(dadosTexto) {
+    solicitacaoEditando = JSON.parse(dadosTexto);
+    document.getElementById("solicitanteResumo").textContent = `${solicitacaoEditando.email} • ${solicitacaoEditando.setor}`;
+    document.getElementById("detalhesSolicitacao").innerHTML = `
+      <div class="row g-2">
+        <div class="col-md-6"><strong>Gestor:</strong> ${escapar(solicitacaoEditando.gestor)}</div>
+        <div class="col-md-6"><strong>Cargo:</strong> ${escapar(solicitacaoEditando.cargo)}</div>
+        <div class="col-12"><strong>Motivo:</strong> ${escapar(solicitacaoEditando.motivo)}</div>
+        <div class="col-md-6"><strong>Prazo:</strong> ${escapar(solicitacaoEditando.prazo_tipo || "-")}</div>
+        <div class="col-md-6"><strong>Até:</strong> ${escapar(solicitacaoEditando.prazo_ate || "-")}</div>
+      </div>`;
+    document.getElementById("permissoesSolicitacao").innerHTML = permissoesDisponiveis.map(([chave, nome]) => `
+      <div class="col-12 col-md-6">
+        <label class="border rounded p-2 d-flex align-items-center gap-2 w-100">
+          <input class="form-check-input m-0" type="checkbox" data-permissao-solicitacao="${chave}">
+          <span>${nome}</span>
+        </label>
+      </div>`).join("");
+    document.getElementById("perfilSolicitacao").value = "consulta";
+    document.getElementById("observacaoSolicitacao").value = "";
+    document.getElementById("dialogSolicitacao").showModal();
+  }
+
+  function fecharSolicitacao() {
+    document.getElementById("dialogSolicitacao").close();
+    solicitacaoEditando = null;
+  }
+
+  async function analisarSolicitacao(decisao) {
+    if (!solicitacaoEditando) return;
+    const perfil = document.getElementById("perfilSolicitacao").value;
+    const observacao = document.getElementById("observacaoSolicitacao").value.trim();
+    const permissoes = {};
+    document.querySelectorAll("[data-permissao-solicitacao]").forEach(campo => {
+      permissoes[campo.dataset.permissaoSolicitacao] = campo.checked;
+    });
+
+    if (decisao === "aprovado" && perfil === "administrador" && !confirm("Confirma a concessão de acesso total como Administrador?")) return;
+    if (decisao === "recusado" && !confirm("Confirma a recusa desta solicitação?")) return;
+
+    const botao = document.getElementById(decisao === "aprovado" ? "btnAprovarSolicitacao" : "btnRecusarSolicitacao");
+    botao.disabled = true;
+    const supabase = await obterClienteSupabase();
+    const { error } = await supabase.rpc("analisar_solicitacao_acesso", {
+      p_solicitacao_id: solicitacaoEditando.id,
+      p_decisao: decisao,
+      p_perfil: decisao === "aprovado" ? perfil : null,
+      p_permissoes: decisoesParaJson(decisao, permissoes),
+      p_observacao: observacao || null
+    });
+    botao.disabled = false;
+
+    if (error) {
+      mostrarMensagem(`Não foi possível concluir: ${error.message}`, "danger");
+      alert(error.message);
+      return;
+    }
+    fecharSolicitacao();
+    mostrarMensagem(decisao === "aprovado" ? "Acesso aprovado e liberado." : "Solicitação recusada.", "success");
+    await Promise.all([carregarSolicitacoes(), carregarUsuarios()]);
+  }
+
+  function decisoesParaJson(decisao, permissoes) {
+    return decisao === "aprovado" ? permissoes : {};
+  }
+
+  async function carregarUsuarios() {
+    const autorizado = await protegerPaginaAdminAcessos("index.html");
+    if (!autorizado) return;
+
+    const supabase = await obterClienteSupabase();
+    const { data, error } = await supabase
+      .from("perfis_usuarios")
+      .select("id,nome,email,perfil,ativo,criado_em,permissoes")
+      .order("nome");
+
+    if (error) {
+      mostrarMensagem(`Não foi possível carregar os usuários: ${error.message}`, "danger");
+      return;
+    }
+
+    document.getElementById("kpiUsuarios").textContent = data.length;
+    document.getElementById("kpiAtivos").textContent = data.filter(u => u.ativo).length;
+    document.getElementById("kpiAdmins").textContent = data.filter(u => u.perfil === "administrador" && u.ativo).length;
+
+    const corpo = document.getElementById("tbodyUsuarios");
+    corpo.innerHTML = data.map(u => `
+      <tr data-id="${u.id}">
+        <td><input class="form-control form-control-sm campo-nome" value="${escapar(u.nome)}"></td>
+        <td>${escapar(u.email)}</td>
+        <td>
+          <select class="form-select form-select-sm campo-perfil">
+            ${perfisPermitidos.map(p => `<option value="${p}" ${p === u.perfil ? "selected" : ""}>${p}</option>`).join("")}
+          </select>
+        </td>
+        <td>
+          <select class="form-select form-select-sm campo-ativo">
+            <option value="true" ${u.ativo ? "selected" : ""}>Ativo</option>
+            <option value="false" ${!u.ativo ? "selected" : ""}>Inativo</option>
+          </select>
+        </td>
+        <td><button class="btn btn-sm btn-outline-primary" type="button"
+          onclick='abrirPermissoes(${JSON.stringify(JSON.stringify({ id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, permissoes: u.permissoes || {} }))})'
+          ${u.perfil === "administrador" ? "disabled title=\"Administrador possui acesso total\"" : ""}>Configurar</button></td>
+        <td>${formatarData(u.criado_em)}</td>
+        <td><button class="btn btn-sm btn-success" type="button" onclick="salvarUsuario(this)">Salvar</button></td>
+      </tr>`).join("");
+
+    mostrarMensagem("Usuários carregados com segurança pelo Supabase.", "success");
+  }
+
+  async function salvarUsuario(botao) {
+    const linha = botao.closest("tr");
+    const id = linha.dataset.id;
+    const nome = linha.querySelector(".campo-nome").value.trim();
+    const perfil = linha.querySelector(".campo-perfil").value;
+    const ativo = linha.querySelector(".campo-ativo").value === "true";
+
+    if (!nome) return mostrarMensagem("O nome não pode ficar vazio.", "warning");
+
+    botao.disabled = true;
+    const supabase = await obterClienteSupabase();
+    const { error } = await supabase
+      .from("perfis_usuarios")
+      .update({ nome, perfil, ativo, atualizado_em: new Date().toISOString() })
+      .eq("id", id);
+    botao.disabled = false;
+
+    if (error) return mostrarMensagem(`Erro ao salvar: ${error.message}`, "danger");
+    mostrarMensagem("Usuário atualizado com sucesso.", "success");
+    await carregarUsuarios();
+  }
+
+  function abrirPermissoes(dadosTexto) {
+    usuarioEditandoPermissoes = JSON.parse(dadosTexto);
+    document.getElementById("usuarioPermissoes").textContent = `${usuarioEditandoPermissoes.nome} • ${usuarioEditandoPermissoes.email}`;
+    document.getElementById("listaPermissoes").innerHTML = permissoesDisponiveis.map(([chave, nome]) => `
+      <div class="col-12 col-md-6">
+        <label class="border rounded p-2 d-flex align-items-center gap-2 w-100">
+          <input class="form-check-input m-0" type="checkbox" data-permissao="${chave}"
+            ${usuarioEditandoPermissoes.permissoes[chave] === true ? "checked" : ""}>
+          <span>${nome}</span>
+        </label>
+      </div>`).join("");
+    document.getElementById("dialogPermissoes").showModal();
+  }
+
+  function fecharPermissoes() {
+    document.getElementById("dialogPermissoes").close();
+    usuarioEditandoPermissoes = null;
+  }
+
+  async function salvarPermissoes() {
+    if (!usuarioEditandoPermissoes) return;
+    const permissoes = {};
+    document.querySelectorAll("#listaPermissoes [data-permissao]").forEach(campo => {
+      permissoes[campo.dataset.permissao] = campo.checked;
+    });
+
+    const botao = document.getElementById("btnSalvarPermissoes");
+    botao.disabled = true;
+    const supabase = await obterClienteSupabase();
+    const { error } = await supabase.from("perfis_usuarios")
+      .update({ permissoes, atualizado_em: new Date().toISOString() })
+      .eq("id", usuarioEditandoPermissoes.id);
+    botao.disabled = false;
+
+    if (error) return mostrarMensagem(`Erro ao salvar permissões: ${error.message}`, "danger");
+    fecharPermissoes();
+    mostrarMensagem("Permissões atualizadas com sucesso.", "success");
+    await carregarUsuarios();
+  }
+
+  Promise.all([carregarUsuarios(), carregarSolicitacoes(), carregarSolicitacoesAnalitico()]);
+</script>
+</body>
+</html>

@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Pluma</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #062b57, #0e7a67);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-shell {
+      width: 100%;
+      max-width: 1100px;
+      min-height: 600px;
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    .left {
+      background: linear-gradient(180deg, #0e7a67, #12345a);
+      color: #fff;
+      padding: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .logo {
+      width: 130px;
+      height: 130px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+
+    .logo img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .title-left {
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .desc {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .right {
+      padding: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: #f4f6f8;
+    }
+
+    .title-login {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #062b57;
+      margin-bottom: 10px;
+    }
+
+    .form-control {
+      height: 55px;
+      border-radius: 12px;
+      background: #e8eef6;
+      border: none;
+    }
+
+    .btn-login {
+      height: 55px;
+      border-radius: 12px;
+      background: #0e7a67;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      margin-top: 10px;
+    }
+
+    .btn-login:hover {
+      background: #0c6a5a;
+    }
+
+    #btnRecuperar {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px 14px;
+      color: #062b57 !important;
+      background: #fff !important;
+      border: 1px solid #0e7a67 !important;
+      border-radius: 10px;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none !important;
+      opacity: 1 !important;
+    }
+
+    #btnRecuperar:hover,
+    #btnRecuperar:focus {
+      color: #fff !important;
+      background: #0e7a67 !important;
+      border-color: #0e7a67 !important;
+      box-shadow: 0 0 0 0.2rem rgba(14, 122, 103, 0.25);
+    }
+
+    #btnRecuperar:disabled {
+      color: #495057 !important;
+      background: #e9ecef !important;
+      border-color: #ced4da !important;
+      opacity: 0.75 !important;
+      cursor: not-allowed;
+    }
+
+    #btnSolicitarAcesso {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      background: #062b57;
+      border: 1px solid #062b57;
+      border-radius: 10px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    #btnSolicitarAcesso:hover,
+    #btnSolicitarAcesso:focus {
+      color: #fff;
+      background: #0e7a67;
+      border-color: #0e7a67;
+      box-shadow: 0 0 0 0.2rem rgba(14, 122, 103, 0.25);
+    }
+
+    .modal-solicitacao {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(6, 43, 87, 0.72);
+    }
+
+    .modal-solicitacao.aberto { display: flex; }
+
+    .modal-conteudo {
+      width: 100%;
+      max-width: 560px;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 28px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-conteudo h2 {
+      color: #062b57;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .modal-conteudo textarea.form-control {
+      height: 110px;
+      resize: vertical;
+    }
+
+    .acoes-solicitacao {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .acoes-solicitacao button {
+      flex: 1;
+      min-height: 46px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    #erro {
+      color: red;
+      margin-top: 10px;
+      font-weight: bold;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .login-shell {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div class="login-shell">
+  <div class="left">
+    <div class="logo">
+      <img src="img/logo-conecta.png" alt="Pluma">
+    </div>
+
+    <div class="title-left">Suporte ORACLE</div>
+
+    <div class="desc">
+      Acesse o painel interno do Programa Conecta para consultar dados e indicadores.
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="title-login">Entrar</div>
+
+    <form id="formLogin" autocomplete="off">
+      <label for="user" class="mb-2">E-mail</label>
+      <input id="user" name="email" type="email" class="form-control mb-3" autocomplete="username" required>
+
+      <label for="pass" class="mb-2">Senha</label>
+      <input id="pass" name="senha" type="password" class="form-control mb-3" autocomplete="current-password" required>
+
+      <button type="submit" class="btn-login w-100">Entrar</button>
+
+      <button type="button" id="btnRecuperar">
+        Esqueci minha senha
+      </button>
+
+      <button type="button" id="btnSolicitarAcesso">
+        Solicitar acesso
+      </button>
+
+      <div id="erro"></div>
+    </form>
+  </div>
+</div>
+
+<div id="modalSolicitacao" class="modal-solicitacao" role="dialog" aria-modal="true" aria-labelledby="tituloSolicitacao">
+  <div class="modal-conteudo">
+    <h2 id="tituloSolicitacao">Solicitar acesso</h2>
+    <p>Preencha as informações abaixo para análise do administrador.</p>
+
+    <form id="formSolicitacao">
+      <label for="emailSolicitacao" class="mb-2">E-mail corporativo</label>
+      <input id="emailSolicitacao" type="email" class="form-control mb-3" readonly required>
+
+      <label for="setorSolicitacao" class="mb-2">Setor de trabalho</label>
+      <input id="setorSolicitacao" type="text" class="form-control mb-3" maxlength="100" required>
+
+      <label for="gestorSolicitacao" class="mb-2">Gestor responsável</label>
+      <input id="gestorSolicitacao" type="text" class="form-control mb-3" maxlength="120" required>
+
+      <label for="cargoSolicitacao" class="mb-2">Cargo ou função</label>
+      <input id="cargoSolicitacao" type="text" class="form-control mb-3" maxlength="120" required>
+
+      <label for="motivoSolicitacao" class="mb-2">Motivo do acesso</label>
+      <textarea id="motivoSolicitacao" class="form-control" maxlength="1000" required></textarea>
+
+      <label for="prazoSolicitacao" class="mt-3 mb-2">Prazo do acesso</label>
+      <select id="prazoSolicitacao" class="form-select mb-3" required>
+        <option value="">Selecione</option>
+        <option value="permanente">Permanente</option>
+        <option value="temporario">Temporário</option>
+      </select>
+
+      <div id="campoPrazoAte" class="d-none">
+        <label for="prazoAteSolicitacao" class="mb-2">Acesso necessário até</label>
+        <input id="prazoAteSolicitacao" type="date" class="form-control mb-3">
+      </div>
+
+      <label class="d-flex gap-2 align-items-start border rounded p-3">
+        <input id="declaracaoSolicitacao" type="checkbox" class="form-check-input mt-1" required>
+        <span>Declaro que utilizarei as informações somente em atividades profissionais autorizadas e não as compartilharei com pessoas não autorizadas.</span>
+      </label>
+
+      <div id="erroSolicitacao" class="mt-3 fw-bold text-center" aria-live="polite"></div>
+
+      <div class="acoes-solicitacao">
+        <button type="button" id="btnCancelarSolicitacao" class="btn btn-outline-secondary">Cancelar</button>
+        <button type="submit" id="btnEnviarSolicitacao" class="btn btn-success">Enviar solicitação</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+  <script src="js/supabase-config.js?v=20260717-2"></script>
+  <script src="js/traducao.js?v=20260717-1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js?v=20260717-supabase-7"></script>
+<script>
+  window.onload = function() {
+    document.getElementById("user").value = "";
+    document.getElementById("pass").value = "";
+  };
+
+  document.getElementById("formLogin").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const u = document.getElementById("user").value.trim();
+    const p = document.getElementById("pass").value.trim();
+    const erro = document.getElementById("erro");
+
+    const botao = this.querySelector("button[type='submit']");
+    botao.disabled = true;
+    botao.textContent = "Entrando...";
+    erro.innerText = "";
+
+    const resultado = await fazerLogin(u, p);
+
+    if (resultado.sucesso) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    erro.innerText = resultado.mensagem || "Falha no login";
+    document.getElementById("pass").value = "";
+    document.getElementById("pass").focus();
+    botao.disabled = false;
+    botao.textContent = "Entrar";
+  });
+
+  document.getElementById("btnRecuperar").addEventListener("click", async function () {
+    const email = document.getElementById("user").value.trim();
+    const erro = document.getElementById("erro");
+
+    if (!email) {
+      erro.innerText = "Informe seu e-mail para recuperar a senha.";
+      document.getElementById("user").focus();
+      return;
+    }
+
+    this.disabled = true;
+    erro.innerText = "Enviando e-mail...";
+
+    const supabase = await obterClienteSupabase();
+    const destino = `${window.location.origin}${window.location.pathname.replace(/login\.html$/i, "redefinir-senha.html")}`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: destino });
+
+    this.disabled = false;
+    erro.innerText = error
+      ? `Não foi possível enviar: ${error.message}`
+      : "E-mail enviado. Use o link mais recente recebido.";
+  });
+
+  document.getElementById("prazoSolicitacao").addEventListener("change", function () {
+    const temporario = this.value === "temporario";
+    document.getElementById("campoPrazoAte").classList.toggle("d-none", !temporario);
+    document.getElementById("prazoAteSolicitacao").required = temporario;
+  });
+
+  const modalSolicitacao = document.getElementById("modalSolicitacao");
+
+  function mensagemSituacaoEmail(situacao) {
+    if (situacao === "cadastrado") return "Este e-mail já possui cadastro no portal. Use Entrar ou Esqueci minha senha.";
+    if (situacao === "pendente") return "Já existe uma solicitação de acesso pendente para este e-mail. Aguarde a análise do administrador.";
+    if (situacao === "invalido") return "A solicitação deve ser feita com um e-mail @plumaagro.com.br.";
+    return "";
+  }
+
+  async function consultarSituacaoEmail(email) {
+    const supabase = await obterClienteSupabase();
+    const { data, error } = await supabase.rpc("situacao_email_portal", { p_email: email });
+    if (error) throw error;
+    return data;
+  }
+
+  document.getElementById("btnSolicitarAcesso").addEventListener("click", async function () {
+    const emailInformado = document.getElementById("user").value.trim().toLowerCase();
+    const erro = document.getElementById("erro");
+
+    if (!emailInformado) {
+      erro.innerText = "Informe seu e-mail corporativo para solicitar acesso.";
+      document.getElementById("user").focus();
+      return;
+    }
+
+    if (!emailInformado.endsWith("@plumaagro.com.br")) {
+      erro.innerText = "A solicitação deve ser feita com um e-mail @plumaagro.com.br.";
+      document.getElementById("user").focus();
+      return;
+    }
+
+    this.disabled = true;
+    erro.style.color = "#062b57";
+    erro.innerText = "Verificando cadastro...";
+    try {
+      const situacao = await consultarSituacaoEmail(emailInformado);
+      if (situacao !== "disponivel") {
+        erro.style.color = "red";
+        erro.innerText = mensagemSituacaoEmail(situacao);
+        return;
+      }
+
+      erro.innerText = "";
+      document.getElementById("emailSolicitacao").value = emailInformado;
+      document.getElementById("erroSolicitacao").innerText = "";
+      modalSolicitacao.classList.add("aberto");
+      document.getElementById("setorSolicitacao").focus();
+    } catch (error) {
+      erro.style.color = "red";
+      erro.innerText = "Não foi possível verificar o cadastro. Atualize a página ou tente novamente mais tarde.";
+    } finally {
+      this.disabled = false;
+    }
+  });
+
+  document.getElementById("btnCancelarSolicitacao").addEventListener("click", function () {
+    modalSolicitacao.classList.remove("aberto");
+  });
+
+  document.getElementById("formSolicitacao").addEventListener("submit", async function (evento) {
+    evento.preventDefault();
+
+    const email = document.getElementById("emailSolicitacao").value.trim().toLowerCase();
+    const setor = document.getElementById("setorSolicitacao").value.trim();
+    const gestor = document.getElementById("gestorSolicitacao").value.trim();
+    const cargo = document.getElementById("cargoSolicitacao").value.trim();
+    const motivo = document.getElementById("motivoSolicitacao").value.trim();
+    const prazoTipo = document.getElementById("prazoSolicitacao").value;
+    const prazoAte = document.getElementById("prazoAteSolicitacao").value || null;
+    const declaracao = document.getElementById("declaracaoSolicitacao").checked;
+    const mensagem = document.getElementById("erroSolicitacao");
+    const botao = document.getElementById("btnEnviarSolicitacao");
+
+    if (!setor || !gestor || !cargo || !motivo || !prazoTipo || !declaracao) {
+      mensagem.style.color = "red";
+      mensagem.innerText = "Preencha todos os campos obrigatórios.";
+      return;
+    }
+
+    if (prazoTipo === "temporario" && !prazoAte) {
+      mensagem.style.color = "red";
+      mensagem.innerText = "Informe a data final do acesso temporário.";
+      return;
+    }
+
+    botao.disabled = true;
+    botao.textContent = "Enviando...";
+    mensagem.style.color = "#062b57";
+    mensagem.innerText = "Registrando solicitação...";
+
+    try {
+      const supabase = await obterClienteSupabase();
+      const { error } = await supabase
+        .from("solicitacoes_acesso")
+        .insert({
+          email, setor, gestor, cargo, motivo,
+          prazo_tipo: prazoTipo, prazo_ate: prazoAte, declaracao_aceita: declaracao
+        });
+
+      if (error) throw error;
+
+      this.reset();
+      document.getElementById("campoPrazoAte").classList.add("d-none");
+      modalSolicitacao.classList.remove("aberto");
+      const erro = document.getElementById("erro");
+      erro.style.color = "#0e7a67";
+      erro.innerText = "Solicitação enviada. Aguarde a análise do administrador.";
+    } catch (error) {
+      mensagem.style.color = "red";
+      try {
+        const situacao = await consultarSituacaoEmail(email);
+        mensagem.innerText = situacao !== "disponivel"
+          ? mensagemSituacaoEmail(situacao)
+          : "Não foi possível enviar a solicitação. Tente novamente mais tarde.";
+      } catch (_) {
+        mensagem.innerText = error && error.code === "23505"
+          ? "Já existe uma solicitação pendente para este e-mail."
+          : "Não foi possível enviar a solicitação. Tente novamente mais tarde.";
+      }
+    } finally {
+      botao.disabled = false;
+      botao.textContent = "Enviar solicitação";
+    }
+  });
+</script>
+<script src="js/atualizado-destaque.js?v=20260717-2"></script>
+</body>
+</html>

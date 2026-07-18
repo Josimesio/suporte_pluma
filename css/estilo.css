@@ -1,0 +1,338 @@
+:root {
+    --pl-verde-escuro: #003F35;
+    --pl-verde-medio: #006E51;
+    --pl-amarelo: #F2C700;
+    --pl-fundo: #F5F5F5;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: var(--pl-fundo);
+    color: #222222;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.app-wrapper {
+    height: 100vh;
+}
+
+/* HEADER */
+.pl-header {
+    background: var(--pl-verde-escuro);
+    color: #FFFFFF;
+    border-bottom: 3px solid var(--pl-amarelo);
+    padding: 6px 0;
+}
+
+.pl-header h1 {
+    font-size: 1.4rem;
+}
+
+.pl-header p {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.logo-conecta {
+    max-height: 40px;
+}
+
+/* =========================
+   BADGE: ÚLTIMA ATUALIZAÇÃO
+   ========================= */
+.pl-atualizacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+.pl-atualizacao .badge {
+  background: rgba(242, 199, 0, 0.16);
+  color: #FFFFFF;
+  border: 1px solid rgba(242, 199, 0, 0.45);
+}
+
+.pl-atualizacao .pl-atualizacao-texto {
+  color: #FFFFFF;
+  opacity: 0.9;
+}
+
+/* MAIN */
+.dashboard-main {
+    overflow: hidden;
+}
+
+/* FILTROS */
+.pl-label {
+    font-weight: 600;
+    color: var(--pl-verde-escuro);
+}
+
+/* KPIs */
+.pl-card-kpi {
+    border-top: 4px solid var(--pl-amarelo);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+.pl-card-kpi .card-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--pl-verde-medio);
+}
+
+.kpi-valor {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--pl-verde-escuro);
+}
+
+/* CONTEÚDO PRINCIPAL */
+.conteudo-row {
+    padding: 4px 0 4px 0;
+    overflow: hidden;
+}
+
+/* TABELA */
+.pl-card-tabela {
+    border-left: 4px solid var(--pl-amarelo);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.tabela-container {
+    overflow-y: auto;
+    max-height: calc(100vh - 280px);
+}
+
+.table {
+    font-size: 0.72rem;
+}
+
+.table thead th,
+.table tbody td {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 260px;
+}
+
+.table thead {
+    background-color: var(--pl-verde-escuro);
+    color: #FFFFFF;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.table tbody tr:hover {
+    background-color: #FFF7CC;
+}
+
+/* GRÁFICOS */
+.pl-card-grafico {
+    border-left: 4px solid var(--pl-verde-medio);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* ✅ ESSENCIAL: o wrapper do canvas precisa ter altura real */
+.grafico-canvas-wrapper {
+    position: relative;
+    min-height: 0;     /* evita overflow em flex containers */
+}
+
+.grafico-canvas-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* =========================
+   AJUSTE DEFINITIVO – PÁGINA GRÁFICOS
+   ========================= */
+
+/* libera rolagem da página */
+body {
+  overflow-y: auto !important;
+}
+
+/* garante que o main possa crescer */
+.dashboard-main {
+  overflow: visible !important;
+}
+
+/* cada card de gráfico fica mais alto */
+.pl-card-grafico {
+  min-height: 420px;
+}
+
+/* canvas ocupa o card inteiro */
+.grafico-canvas-wrapper {
+  height: 100%;
+  min-height: 340px;
+}
+
+.grafico-canvas-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* layout 2x1 com rolagem natural */
+.graficos-grid-section {
+  padding-bottom: 1rem;
+}
+
+/* mobile: gráficos ainda maiores */
+@media (max-width: 991.98px) {
+  .pl-card-grafico {
+    min-height: 460px;
+  }
+  
+}
+
+
+
+/* =========================================
+   ATUALIZADO EM — EVIDÊNCIA PROFISSIONAL
+   ========================================= */
+
+.pl-header{
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+}
+
+/* “chip” executivo */
+.pl-atualizacao{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.22);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+.pl-atualizacao .pl-dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #32D583;
+  box-shadow: 0 0 0 4px rgba(50,213,131,0.16);
+}
+
+.pl-atualizacao .pl-label{
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.78);
+}
+
+.pl-atualizacao .pl-value{
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.2px;
+  line-height: 1;
+}
+
+.pl-atualizacao .pl-tz{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.70);
+}
+
+
+/* ===== Filtros em Checkbox Dropdown (Serviço, Status e Severidade) ===== */
+.status-checkbox-filter {
+  position: relative;
+  min-height: 31px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.status-dropdown-toggle {
+  width: 100%;
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid #ced4da;
+  border-radius: .375rem;
+  background: #fff;
+  color: #212529;
+  font-size: .875rem;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.status-dropdown-toggle:hover { background: #f8f9fa; }
+.status-dropdown-toggle:focus {
+  outline: 0;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 .2rem rgba(13,110,253,.18);
+}
+.status-dropdown-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-dropdown-arrow { font-size: .8rem; transition: transform .15s ease-in-out; }
+.status-checkbox-filter.is-open .status-dropdown-arrow { transform: rotate(180deg); }
+
+.status-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  max-height: 230px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #ced4da;
+  border-radius: .5rem;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(0,0,0,.14);
+}
+.status-checkbox-filter.is-open .status-dropdown-menu { display: block; }
+
+.status-checkbox-filter .status-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 8px;
+  border-radius: .375rem;
+  background: transparent;
+  font-size: .82rem;
+  line-height: 1.2;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.status-checkbox-filter .status-check:hover { background: #eef2f7; }
+.status-checkbox-filter input[type="checkbox"] { width: 14px; height: 14px; margin: 0; flex: 0 0 auto; }
+.status-checkbox-filter .status-check-all { font-weight: 600; border-bottom: 1px solid #edf0f2; margin-bottom: 4px; }
+@media (max-width: 767.98px) { .status-dropdown-menu { position: static; margin-top: 4px; } }
+
+
+
+/* Correção final: dropdown checkbox dos filtros (2025/2026) */
+.status-checkbox-filter{position:relative!important;min-height:31px!important;padding:0!important;border:0!important;background:transparent!important;display:block!important}
+.status-dropdown-toggle{width:100%!important;min-height:31px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:5px 10px!important;border:1px solid #ced4da!important;border-radius:.375rem!important;background:#fff!important;color:#212529!important;font-size:.875rem!important;line-height:1.5!important;text-align:left!important;cursor:pointer!important;appearance:none!important}
+.status-dropdown-menu{display:none!important;position:absolute!important;top:calc(100% + 4px)!important;left:0!important;right:0!important;z-index:1050!important;max-height:230px!important;overflow-y:auto!important;padding:6px!important;border:1px solid #ced4da!important;border-radius:.5rem!important;background:#fff!important;box-shadow:0 10px 24px rgba(0,0,0,.14)!important}
+.status-checkbox-filter.is-open .status-dropdown-menu{display:block!important}
+.status-checkbox-filter .status-check{display:flex!important;align-items:center!important;gap:7px!important;width:100%!important;margin:0!important;padding:7px 8px!important;border-radius:.375rem!important;background:transparent!important;font-size:.82rem!important;line-height:1.2!important;cursor:pointer!important;user-select:none!important;white-space:nowrap!important}
+.status-checkbox-filter input[type=checkbox]{width:14px!important;height:14px!important;margin:0!important;flex:0 0 auto!important;display:inline-block!important;appearance:auto!important}
+@media (max-width:767.98px){.status-dropdown-menu{position:static!important;margin-top:4px!important}}

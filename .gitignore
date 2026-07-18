@@ -1,0 +1,4 @@
+**/credenciais.py
+.env
+**/.env
+config/.env

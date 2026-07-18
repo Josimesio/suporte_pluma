@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <script src="js/supabase-config.js?v=20260717-2"></script>
+  <script src="js/traducao.js?v=20260717-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js?v=20260717-supabase-7"></script>
+  <script src="js/dados-supabase.js?v=20260717-3"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SLA dos Chamados 2026 - ORACLE</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilo.css?v=20260501-sla-1" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <style>
+    body { overflow-y: auto !important; }
+    .dashboard-main { overflow: visible !important; }
+    .chart-wrap { height: 340px; position: relative; }
+    .chart-wrap-lg { height: 390px; position: relative; }
+    .sla-pill { display:inline-block; padding:3px 8px; border-radius:999px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+    .sla-ok { background:#DCFCE7; color:#166534; }
+    .sla-risco { background:#FEF3C7; color:#92400E; }
+    .sla-fora { background:#FEE2E2; color:#991B1B; }
+    .sla-sem { background:#E5E7EB; color:#374151; }
+    .sla-help { border-left:4px solid #F2C700; background:#fffdf0; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper d-flex flex-column">
+
+  <header class="pl-header">
+    <div class="container-fluid">
+      <div class="row align-items-center g-2">
+        <div class="col-md-7">
+          <h1 class="mb-0">SLA dos Chamados 2026 - ORACLE</h1>
+          <p class="mb-0">Programa Conecta • Grupo Pluma</p>
+          <div class="small text-white-50">Atualizado em: <span id="atualizadoEm">...</span></div>
+        </div>
+
+        <div class="col-md-3 text-md-end text-center d-flex flex-column gap-2 justify-content-md-end justify-content-center">
+          <div class="d-flex flex-wrap gap-2 justify-content-md-end justify-content-center">
+            <a class="btn btn-sm btn-outline-light" href="index.html">🏠 Index Principal</a>
+            <span class="badge bg-warning text-dark align-self-center">Ano 2026</span>
+            <a class="btn btn-sm btn-light" href="index_2026.html">📄 Chamados</a>
+            <a class="btn btn-sm btn-light" href="graficos_2026.html">📊 Gráficos</a>
+            <a class="btn btn-sm btn-light" href="top-modulos_2026.html">🧩 Top Módulos</a>
+            <a class="btn btn-sm btn-light" href="top-contatos_2026.html">👤 Top Contatos</a>
+            <a class="btn btn-sm btn-warning" href="sla_2026.html">⏱ SLA</a>
+              <a class="btn btn-sm btn-light" href="sr-corte.html">📌 Corte SR</a>
+          </div>
+          <div class="d-flex flex-wrap gap-2 justify-content-md-end justify-content-center">
+            <span class="badge bg-secondary align-self-center">Trocar</span>
+            <a class="btn btn-sm btn-outline-light" href="sla_2025.html">⏱ SLA 2025</a>
+          </div>
+        </div>
+
+        <div class="col-md-2 text-md-end text-center">
+          <div class="d-flex flex-column align-items-md-end align-items-center gap-2">
+            <img src="img/logo-conecta.png" alt="Logo Programa Conecta" class="logo-conecta img-fluid">
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="fazerLogout()">🚪 Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-main flex-grow-1">
+    <section class="py-2 bg-white border-bottom">
+      <div class="container-fluid">
+        <div id="statusBox" class="alert alert-info py-2 mb-0">Carregando SLA...</div>
+        <div class="small text-muted mt-1 d-none">Fonte: <b id="fonteDados">-</b></div>
+        <div id="uploadBox" class="mt-2 d-none">
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <input class="form-control form-control-sm" type="file" id="fileInput" accept=".csv" style="max-width:420px;">
+            <span class="small text-muted">Selecione o CSV bruto se os dados não carregarem automaticamente.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-2">
+      <div class="container-fluid">
+        <div class="alert sla-help py-2 mb-2 small">
+          Regra inicial: quando existir <b>Milestone Date</b>, o SLA compara a data de fechamento, ou a data atual se estiver aberto, contra esse prazo. Chamados sem Milestone ficam em <b>Sem milestone</b> para ajuste posterior.
+        </div>
+        <div class="row g-2">
+          <div class="col-6 col-lg-2"><div class="card pl-card-kpi text-center"><div class="card-body py-2"><div class="card-title">Total</div><div class="kpi-valor" id="kpiTotal">-</div></div></div></div>
+          <div class="col-6 col-lg-2"><div class="card pl-card-kpi text-center"><div class="card-body py-2"><div class="card-title">Dentro SLA</div><div class="kpi-valor" id="kpiDentro">-</div></div></div></div>
+          <div class="col-6 col-lg-2"><div class="card pl-card-kpi text-center"><div class="card-body py-2"><div class="card-title">Em risco</div><div class="kpi-valor" id="kpiRisco">-</div></div></div></div>
+          <div class="col-6 col-lg-2"><div class="card pl-card-kpi text-center"><div class="card-body py-2"><div class="card-title">Fora SLA</div><div class="kpi-valor" id="kpiFora">-</div></div></div></div>
+          <div class="col-6 col-lg-2"><div class="card pl-card-kpi text-center"><div class="card-body py-2"><div class="card-title">Sem milestone</div><div class="kpi-valor" id="kpiSemMilestone">-</div></div></div></div>
+          <div class="col-6 col-lg-2"><div class="card pl-card-kpi text-center"><div class="card-body py-2"><div class="card-title">Cumprimento</div><div class="kpi-valor" id="kpiCumprimento">-</div></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-2">
+      <div class="container-fluid">
+        <div class="row g-3">
+          <div class="col-12"><div class="card pl-card-grafico"><div class="card-body"><h2 class="fs-6 mb-2">SLA por mês</h2><div class="chart-wrap-lg"><canvas id="graficoSlaMes"></canvas></div></div></div></div>
+          <div class="col-12 col-lg-6"><div class="card pl-card-grafico"><div class="card-body"><h2 class="fs-6 mb-2">SRs por Severidade</h2><div class="chart-wrap"><canvas id="graficoSlaSeveridade"></canvas></div></div></div></div>
+          <div class="col-12 col-lg-6"><div class="card pl-card-grafico"><div class="card-body"><h2 class="fs-6 mb-2">Top serviços fora do SLA</h2><div class="chart-wrap"><canvas id="graficoSlaServico"></canvas></div></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-2 pb-4">
+      <div class="container-fluid">
+        <div class="card pl-card-tabela">
+          <div class="card-body py-2">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h2 class="fs-6 mb-0">Ranking / Detalhamento SLA</h2>
+              <span class="small text-muted">Ordenado por maior risco</span>
+            </div>
+            <div class="table-responsive" style="max-height:520px; overflow:auto;">
+              <table class="table table-striped table-hover table-sm align-middle mb-0">
+                <thead><tr><th>SR</th><th>Serviço</th><th>Severidade</th><th>Status</th><th>Criado</th><th>Fechado</th><th>Milestone</th><th>Milestone Date</th><th>Dias</th><th>SLA</th><th>Contato</th></tr></thead>
+                <tbody id="tabelaSla"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/sla.js?v=20260717-traducao-1"></script>
+<script src="js/atualizado-destaque.js?v=20260717-2"></script>
+</body>
+</html>

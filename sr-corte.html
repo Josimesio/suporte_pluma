@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <script src="js/supabase-config.js?v=20260717-2"></script>
+  <script src="js/traducao.js?v=20260717-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js?v=20260717-supabase-7"></script>
+  <script src="js/dados-supabase.js?v=20260717-3"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Painel por Período - Service Requests ORACLE</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/estilo.css?v=20260706-corte-1" />
+  <link rel="stylesheet" href="css/sr-corte.css?v=20260706-periodo-final-1" />
+
+  <style>
+    /* área de ações removida */
+    .control-panel .actions { display: none !important; }
+    .control-panel {
+      grid-template-columns: minmax(140px, 165px) minmax(140px, 165px) minmax(140px, 180px) minmax(260px, 1.25fr) minmax(280px, 1.5fr) !important;
+    }
+    @media (max-width: 900px) {
+      .control-panel { grid-template-columns: 1fr !important; }
+    }
+  </style>
+  <script>
+    if (typeof protegerPagina === "function") protegerPagina("login.html");
+  </script>
+</head>
+<body>
+  <header class="pl-header py-2">
+    <div class="container-fluid">
+      <div class="row align-items-center g-2">
+        <div class="col-md-7">
+          <h1 class="mb-0">Painel de SR por Período - ORACLE</h1>
+          <p class="mb-0">Programa Conecta • Grupo Pluma</p>
+          <small class="text-light opacity-75">Consulta por data inicial e data final usando CSV atualizado</small>
+        </div>
+        <div class="col-md-5 text-md-end text-center">
+          <div class="d-flex flex-wrap gap-2 justify-content-md-end justify-content-center align-items-center">
+            <a class="btn btn-sm btn-outline-light" href="index.html">🏠 Index Principal</a>
+            <a class="btn btn-sm btn-light" href="index_2025.html">📄 2025</a>
+            <a class="btn btn-sm btn-light" href="index_2026.html">📄 2026</a>
+            <a class="btn btn-sm btn-warning" href="sr-corte.html">📌 SR Período</a>
+            <button class="btn btn-sm btn-outline-light" onclick="if (typeof fazerLogout === 'function') fazerLogout(); else location.href='login.html';">🚪 Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Programa Conecta • Grupo Pluma</p>
+        <h1>ORACLE</h1>
+        <p class="subtitle">Painel por período para acompanhamento de Service Requests</p>
+      </div>
+      <div class="hero-meta">
+        <span><strong id="csvName"></strong></span>
+        <span>Atualizado em: <strong id="updatedAt">-</strong></span>
+      </div>
+    </header>
+
+    <section class="control-panel">
+      <div class="field field-date">
+        <label for="startDate">Data inicial</label>
+        <input id="startDate" type="date" />
+      </div>
+
+      <div class="field field-date">
+        <label for="cutDate">Data final</label>
+        <input id="cutDate" type="date" />
+      </div>
+
+      <div class="field">
+        <label for="statusFilter">Status</label>
+        <select id="statusFilter">
+          <option value="">Todos</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="serviceFilter">Frente / Serviço</label>
+        <select id="serviceFilter">
+          <option value="">Todos</option>
+        </select>
+      </div>
+
+      <div class="field field-search">
+        <label for="searchBox">Busca rápida</label>
+        <input id="searchBox" type="search" placeholder="SR, serviço, status, contato..." />
+      </div>
+    </section>
+
+    <div id="statusMessage" class="status-message info">Carregando dados do CSV...</div>
+
+    <main class="dashboard-grid">
+      <section class="card feedback-card">
+        <div class="section-title">Feedback</div>
+        <div class="table-wrap compact">
+          <table>
+            <thead>
+              <tr>
+                <th>Frente (SRs)</th>
+                <th>Qtde</th>
+                <th>Impacto</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackTable">
+              <tr><td colspan="3">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="stack-card">
+        <article class="card mini-card">
+          <div class="section-title">O que avançou?</div>
+          <p id="advancedText">-</p>
+        </article>
+
+        <article class="card mini-card attention-card">
+          <div class="section-title">Atenção</div>
+          <ul id="attentionList"></ul>
+        </article>
+      </section>
+
+      <section class="stack-card">
+        <article class="card mini-card">
+          <div class="section-title">O que precisa de ajuste?</div>
+          <p id="adjustText">-</p>
+        </article>
+
+        <article class="card mini-card no-go-card">
+          <div class="table-wrap compact">
+            <table>
+              <thead>
+                <tr>
+                  <th>No Go</th>
+                  <th>Qtde</th>
+                  <th>Resolvidos</th>
+                </tr>
+              </thead>
+              <tbody id="noGoTable">
+                <tr><td colspan="3">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="card service-card">
+        <div class="service-title">Service Requests</div>
+        <div class="service-grid">
+          <div class="big-number">
+            <span id="kpiOpen">0</span>
+            <small>Abertas no período</small>
+          </div>
+          <div class="status-metrics">
+            <div><strong id="kpiCustomer">0</strong><span>Customer<br />Working</span></div>
+            <div><strong id="kpiDev">0</strong><span>Dev<br />Invest.</span></div>
+            <div><strong id="kpiOracle">0</strong><span>Oracle<br />Working</span></div>
+          </div>
+          <div class="pill-box">
+            <h3>Severidade</h3>
+            <p>Crítica: <strong id="sevCritical">0</strong></p>
+            <p>Significativa: <strong id="sevSignificant">0</strong></p>
+            <p>Padrão: <strong id="sevStandard">0</strong></p>
+            <p>Mínima: <strong id="sevLow">0</strong></p>
+          </div>
+          <div class="pill-box">
+            <h3>Impacto</h3>
+            <p>Alto: <strong id="impactHigh">0</strong></p>
+            <p>Médio: <strong id="impactMedium">0</strong></p>
+            <p>Baixo: <strong id="impactLow">0</strong></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card list-card">
+        <div class="list-head">
+          <div>
+            <div class="section-title">Chamados referentes ao período</div>
+            <p id="tableSubTitle">-</p>
+          </div>
+          <div class="list-actions">
+            <button id="exportBtn" type="button">Exportar visão</button>
+          </div>
+        </div>
+        <div class="table-wrap sr-table-wrap">
+          <table class="sr-table">
+            <thead>
+              <tr>
+                <th data-sort="Número SR">SR</th>
+                <th data-sort="Serviço">Serviço</th>
+                <th data-sort="Issue Type">Tipo</th>
+                <th data-sort="Status">Status</th>
+                <th data-sort="Severidade">Severidade</th>
+                <th data-sort="Criado_dt">Criado</th>
+                <th data-sort="Atualizado_dt">Atualizado</th>
+                <th data-sort="Contato Primário">Contato</th>
+              </tr>
+            </thead>
+            <tbody id="srTableBody">
+              <tr><td colspan="8">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-note">
+      Critério: chamados com data de criação ou atualização dentro do período selecionado entre a data inicial e a data final.
+    </footer>
+  </div>
+
+  <script src="js/sr-corte.js?v=20260706-range-csv2026-1"></script>
+  <script src="js/sr-corte-hotfix.js?v=20260706"></script>
+<script src="js/atualizado-destaque.js?v=20260717-2"></script>
+</body>
+</html>
+

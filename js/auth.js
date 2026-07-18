@@ -15,7 +15,7 @@
   }
 
   function ehPaginaAutenticacao() {
-    return /^(login|redefinir-senha)\.html$/i.test(paginaAtual());
+    return /^(login|redefinir-senha|mfa)\.html$/i.test(paginaAtual());
   }
 
   function ocultarPagina() {
@@ -82,14 +82,14 @@
 
     const { data: perfil, error: erroPerfil } = await supabase
       .from("perfis_usuarios")
-      .select("id,nome,email,perfil,ativo,ultimo_acesso_em,permissoes")
+      .select("id,nome,email,perfil,ativo,ultimo_acesso_em,permissoes,mfa_obrigatorio,mfa_configurado_em")
       .eq("id", usuarioSessao.id)
       .single();
 
     if (erroPerfil && /permissoes/i.test(erroPerfil.message || "")) {
       const tentativa = await supabase
         .from("perfis_usuarios")
-        .select("id,nome,email,perfil,ativo,ultimo_acesso_em")
+        .select("id,nome,email,perfil,ativo,ultimo_acesso_em,mfa_obrigatorio,mfa_configurado_em")
         .eq("id", usuarioSessao.id)
         .single();
       if (tentativa.error) throw new Error("Perfil de acesso não localizado.");
@@ -182,6 +182,26 @@
     window.aplicarCabecalhoPadronizado(perfilSessao);
   }
 
+  async function obterNivelMfa() {
+    const supabase = await iniciarCliente();
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (error) throw error;
+    return data;
+  }
+
+  async function destinoAposLogin() {
+    if (!perfilSessao?.mfa_obrigatorio) return "index.html";
+
+    const nivel = await obterNivelMfa();
+    return nivel?.currentLevel === "aal2" ? "index.html" : "mfa.html";
+  }
+
+  async function mfaEstaValidado() {
+    if (!perfilSessao?.mfa_obrigatorio) return true;
+    const nivel = await obterNivelMfa();
+    return nivel?.currentLevel === "aal2";
+  }
+
   async function fazerLogin(email, senha) {
     try {
       const supabase = await iniciarCliente();
@@ -201,7 +221,11 @@
         return { sucesso: false, erro: "inativo", mensagem: "Usuário inativo. Procure o administrador." };
       }
 
-      return { sucesso: true, perfil: perfilSessao };
+      return {
+        sucesso: true,
+        perfil: perfilSessao,
+        destino: await destinoAposLogin()
+      };
     } catch (erro) {
       console.error("Falha no login:", erro);
       return { sucesso: false, erro: "sistema", mensagem: erro.message || "Falha ao acessar o serviço de autenticação." };
@@ -227,6 +251,19 @@
         window.location.replace(destinoLogin);
         return false;
       }
+
+      if (!(await mfaEstaValidado())) {
+        const atual = paginaAtual();
+        if (atual && atual !== "mfa.html") {
+          sessionStorage.setItem(
+            "pluma_destino_pos_mfa",
+            atual + window.location.search + window.location.hash
+          );
+        }
+        window.location.replace("mfa.html");
+        return false;
+      }
+
       exibirPagina();
       return true;
     } catch (erro) {
@@ -279,6 +316,7 @@
   window.perfilAtual = perfilAtual;
   window.usuarioEhAdminAcessos = usuarioEhAdminAcessos;
   window.obterClienteSupabase = obterClienteSupabase;
+  window.obterNivelMfa = obterNivelMfa;
   window.limparSessao = limparSessao;
 
   ocultarPagina();

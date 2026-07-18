@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificação em duas etapas - Suporte ORACLE</title>
+
+  <script src="js/supabase-config.js?v=20260717-2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js?v=20260718-mfa-1"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #062b57, #0e7a67);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .mfa-card {
+      width: min(560px, 100%);
+      background: #fff;
+      border-radius: 20px;
+      padding: 34px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.28);
+    }
+
+    .mfa-logo {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      color: #062b57;
+      font-weight: 800;
+      font-size: 1.8rem;
+    }
+
+    .qr-box {
+      display: flex;
+      justify-content: center;
+      padding: 18px;
+      margin: 18px 0;
+      border: 1px solid #dce4eb;
+      border-radius: 14px;
+      background: #f8fafb;
+    }
+
+    #qrCode {
+      width: 220px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .codigo-manual {
+      word-break: break-all;
+      font-family: Consolas, monospace;
+      font-weight: 700;
+      background: #eef3f7;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    #codigo {
+      height: 58px;
+      text-align: center;
+      letter-spacing: .45rem;
+      font-size: 1.45rem;
+      font-weight: 800;
+    }
+
+    .btn-confirmar {
+      min-height: 52px;
+      background: #0e7a67;
+      border-color: #0e7a67;
+      font-weight: 700;
+    }
+
+    .btn-confirmar:hover {
+      background: #0b6657;
+      border-color: #0b6657;
+    }
+
+    #mensagem {
+      min-height: 24px;
+      font-weight: 700;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="mfa-card">
+    <div class="text-center">
+      <img src="img/logo-conecta.png" alt="Programa Conecta" class="mfa-logo">
+      <h1 id="titulo">Verificação em duas etapas</h1>
+      <p id="descricao" class="text-muted">
+        Validando sua conta...
+      </p>
+    </div>
+
+    <section id="painelConfiguracao" class="d-none">
+      <div class="alert alert-info">
+        Abra o Google Authenticator ou Microsoft Authenticator e escaneie o QR Code.
+      </div>
+
+      <div class="qr-box">
+        <img id="qrCode" alt="QR Code para configurar o autenticador">
+      </div>
+
+      <div class="small text-muted mb-1">Chave para configuração manual:</div>
+      <div id="chaveManual" class="codigo-manual mb-3"></div>
+    </section>
+
+    <section id="painelCodigo" class="d-none">
+      <label for="codigo" class="form-label fw-bold">
+        Código de 6 números
+      </label>
+      <input
+        id="codigo"
+        class="form-control"
+        type="text"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        maxlength="6"
+        pattern="[0-9]{6}"
+        placeholder="000000"
+      >
+
+      <button id="btnConfirmar" type="button" class="btn btn-success btn-confirmar w-100 mt-3">
+        Confirmar e entrar
+      </button>
+    </section>
+
+    <div id="mensagem" class="mt-3" aria-live="polite"></div>
+
+    <button id="btnCancelar" type="button" class="btn btn-outline-secondary w-100 mt-2">
+      Cancelar e sair
+    </button>
+  </main>
+
+<script>
+  let clienteMfa = null;
+  let fatorIdAtual = null;
+
+  function mensagem(texto, tipo = "danger") {
+    const el = document.getElementById("mensagem");
+    el.className = `mt-3 text-${tipo}`;
+    el.textContent = texto || "";
+  }
+
+  function somenteNumeros(valor) {
+    return String(valor || "").replace(/\D/g, "").slice(0, 6);
+  }
+
+  function destinoFinal() {
+    const salvo = sessionStorage.getItem("pluma_destino_pos_mfa");
+    sessionStorage.removeItem("pluma_destino_pos_mfa");
+
+    if (!salvo || /^(login|mfa|redefinir-senha)\.html/i.test(salvo)) {
+      return "index.html";
+    }
+    return salvo;
+  }
+
+  async function concluirMfa() {
+    try {
+      const { data: usuarioData } = await clienteMfa.auth.getUser();
+      if (usuarioData?.user) {
+        await clienteMfa
+          .from("perfis_usuarios")
+          .update({ mfa_configurado_em: new Date().toISOString() })
+          .eq("id", usuarioData.user.id);
+      }
+    } catch (erro) {
+      console.warn("Não foi possível registrar a data do MFA:", erro);
+    }
+
+    window.location.replace(destinoFinal());
+  }
+
+  async function mostrarValidacao(fator) {
+    fatorIdAtual = fator.id;
+
+    document.getElementById("titulo").textContent = "Confirme seu código";
+    document.getElementById("descricao").textContent =
+      "Abra seu aplicativo autenticador e informe o código atual.";
+    document.getElementById("painelConfiguracao").classList.add("d-none");
+    document.getElementById("painelCodigo").classList.remove("d-none");
+    document.getElementById("codigo").focus();
+  }
+
+  async function prepararConfiguracao(fatores) {
+    document.getElementById("titulo").textContent = "Configure seu segundo fator";
+    document.getElementById("descricao").textContent =
+      "Esta configuração será necessária somente no primeiro acesso.";
+
+    const naoVerificados = (fatores?.totp || []).filter(
+      fator => fator.status && fator.status !== "verified"
+    );
+
+    for (const fator of naoVerificados) {
+      try {
+        await clienteMfa.auth.mfa.unenroll({ factorId: fator.id });
+      } catch (_) {}
+    }
+
+    const { data, error } = await clienteMfa.auth.mfa.enroll({
+      factorType: "totp",
+      friendlyName: "Suporte ORACLE"
+    });
+
+    if (error) throw error;
+
+    fatorIdAtual = data.id;
+    document.getElementById("qrCode").src = data.totp.qr_code;
+    document.getElementById("chaveManual").textContent = data.totp.secret;
+
+    document.getElementById("painelConfiguracao").classList.remove("d-none");
+    document.getElementById("painelCodigo").classList.remove("d-none");
+    document.getElementById("codigo").focus();
+  }
+
+  async function iniciarPagina() {
+    try {
+      await window.plumaAuthPronto;
+      clienteMfa = await obterClienteSupabase();
+
+      const { data: sessaoData, error: erroSessao } =
+        await clienteMfa.auth.getSession();
+
+      if (erroSessao || !sessaoData.session) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      const usuario = sessaoData.session.user;
+      const { data: perfil, error: erroPerfil } = await clienteMfa
+        .from("perfis_usuarios")
+        .select("ativo,mfa_obrigatorio")
+        .eq("id", usuario.id)
+        .single();
+
+      if (erroPerfil || !perfil?.ativo) {
+        await clienteMfa.auth.signOut();
+        window.location.replace("login.html");
+        return;
+      }
+
+      if (!perfil.mfa_obrigatorio) {
+        window.location.replace(destinoFinal());
+        return;
+      }
+
+      const { data: nivel } =
+        await clienteMfa.auth.mfa.getAuthenticatorAssuranceLevel();
+
+      if (nivel?.currentLevel === "aal2") {
+        await concluirMfa();
+        return;
+      }
+
+      const { data: fatores, error: erroFatores } =
+        await clienteMfa.auth.mfa.listFactors();
+
+      if (erroFatores) throw erroFatores;
+
+      const verificado = (fatores?.totp || []).find(
+        fator => fator.status === "verified"
+      );
+
+      if (verificado) {
+        await mostrarValidacao(verificado);
+      } else {
+        await prepararConfiguracao(fatores);
+      }
+    } catch (erro) {
+      console.error("Falha no fluxo MFA:", erro);
+      mensagem(erro.message || "Não foi possível iniciar a verificação.");
+    }
+  }
+
+  document.getElementById("codigo").addEventListener("input", function () {
+    this.value = somenteNumeros(this.value);
+  });
+
+  document.getElementById("codigo").addEventListener("keydown", function (evento) {
+    if (evento.key === "Enter") {
+      evento.preventDefault();
+      document.getElementById("btnConfirmar").click();
+    }
+  });
+
+  document.getElementById("btnConfirmar").addEventListener("click", async function () {
+    const codigo = somenteNumeros(document.getElementById("codigo").value);
+
+    if (codigo.length !== 6) {
+      mensagem("Informe os seis números exibidos no aplicativo.");
+      return;
+    }
+
+    this.disabled = true;
+    this.textContent = "Validando...";
+    mensagem("", "muted");
+
+    try {
+      const { error } = await clienteMfa.auth.mfa.challengeAndVerify({
+        factorId: fatorIdAtual,
+        code: codigo
+      });
+
+      if (error) throw error;
+
+      mensagem("Código confirmado. Acesso liberado.", "success");
+      await concluirMfa();
+    } catch (erro) {
+      mensagem("Código inválido ou expirado. Confira o aplicativo e tente novamente.");
+      document.getElementById("codigo").value = "";
+      document.getElementById("codigo").focus();
+      this.disabled = false;
+      this.textContent = "Confirmar e entrar";
+    }
+  });
+
+  document.getElementById("btnCancelar").addEventListener("click", async function () {
+    if (clienteMfa) await clienteMfa.auth.signOut();
+    window.location.replace("login.html");
+  });
+
+  iniciarPagina();
+</script>
+</body>
+</html>

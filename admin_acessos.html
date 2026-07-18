@@ -179,7 +179,7 @@
     <div class="row g-3">
       <div class="col-md-5">
         <label for="perfilSolicitacao" class="form-label fw-bold">Perfil a conceder</label>
-        <select id="perfilSolicitacao" class="form-select">
+        <select id="perfilSolicitacao" class="form-select" onchange="sincronizarMfaPerfil()">
           <option value="consulta">Consulta</option><option value="analista">Analista</option>
           <option value="gestor">Gestor</option><option value="administrador">Administrador</option>
         </select>
@@ -187,6 +187,24 @@
       <div class="col-md-7">
         <label for="observacaoSolicitacao" class="form-label fw-bold">Observação da análise</label>
         <input id="observacaoSolicitacao" class="form-control" maxlength="500">
+      </div>
+    </div>
+    <div class="mt-3">
+      <div class="border rounded p-3 bg-light" id="blocoMfaSolicitacao">
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="mfaObrigatorioSolicitacao"
+          >
+          <label class="form-check-label fw-bold" for="mfaObrigatorioSolicitacao">
+            Exigir autenticação em duas etapas (2FA)
+          </label>
+        </div>
+        <div id="ajudaMfaSolicitacao" class="small text-muted mt-1">
+          Quando ativado, o usuário precisará configurar um aplicativo autenticador no primeiro acesso.
+        </div>
       </div>
     </div>
     <div class="fw-bold mt-3 mb-2">Permissões finais</div>
@@ -537,7 +555,28 @@
       </div>`).join("");
     document.getElementById("perfilSolicitacao").value = "consulta";
     document.getElementById("observacaoSolicitacao").value = "";
+    document.getElementById("mfaObrigatorioSolicitacao").checked = false;
+    sincronizarMfaPerfil();
     document.getElementById("dialogSolicitacao").showModal();
+  }
+
+  function sincronizarMfaPerfil() {
+    const perfil = document.getElementById("perfilSolicitacao").value;
+    const campoMfa = document.getElementById("mfaObrigatorioSolicitacao");
+    const ajudaMfa = document.getElementById("ajudaMfaSolicitacao");
+
+    if (!campoMfa || !ajudaMfa) return;
+
+    const administrador = perfil === "administrador";
+
+    if (administrador) {
+      campoMfa.checked = true;
+      campoMfa.disabled = true;
+      ajudaMfa.textContent = "Para o perfil Administrador, o 2FA é obrigatório e não pode ser desmarcado.";
+    } else {
+      campoMfa.disabled = false;
+      ajudaMfa.textContent = "Marque esta opção para obrigar o usuário a configurar um aplicativo autenticador no primeiro acesso.";
+    }
   }
 
   function fecharSolicitacao() {
@@ -549,6 +588,7 @@
     if (!solicitacaoEditando) return;
     const perfil = document.getElementById("perfilSolicitacao").value;
     const observacao = document.getElementById("observacaoSolicitacao").value.trim();
+    const mfaObrigatorio = document.getElementById("mfaObrigatorioSolicitacao").checked;
     const permissoes = {};
     document.querySelectorAll("[data-permissao-solicitacao]").forEach(campo => {
       permissoes[campo.dataset.permissaoSolicitacao] = campo.checked;
@@ -565,7 +605,8 @@
       p_decisao: decisao,
       p_perfil: decisao === "aprovado" ? perfil : null,
       p_permissoes: decisoesParaJson(decisao, permissoes),
-      p_observacao: observacao || null
+      p_observacao: observacao || null,
+      p_mfa_obrigatorio: decisao === "aprovado" ? mfaObrigatorio : false
     });
     botao.disabled = false;
 

@@ -9,3 +9,4 @@ config/.env
 # Backups automáticos
 *.backup_*.html
 *.backup_*.js
+*.py

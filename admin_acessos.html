@@ -139,13 +139,13 @@
           <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
             <div>
               <h2 class="h6 mb-1">Usuários cadastrados</h2>
-              <div class="small text-muted">Altere o nome, perfil ou status e clique em Salvar.</div>
+              <div class="small text-muted">Altere nome, perfil, status, exigência de 2FA e clique em Salvar.</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" onclick="carregarUsuarios()">🔄 Atualizar</button>
           </div>
           <div class="table-responsive">
             <table class="table table-striped table-hover table-sm align-middle mb-0">
-              <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Permissões</th><th>Criado em</th><th>Ação</th></tr></thead>
+              <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>2FA</th><th>Permissões</th><th>Criado em</th><th>Ação</th></tr></thead>
               <tbody id="tbodyUsuarios"></tbody>
             </table>
           </div>
@@ -631,7 +631,7 @@
     const supabase = await obterClienteSupabase();
     const { data, error } = await supabase
       .from("perfis_usuarios")
-      .select("id,nome,email,perfil,ativo,criado_em,permissoes")
+      .select("id,nome,email,perfil,ativo,criado_em,permissoes,mfa_obrigatorio,mfa_configurado_em")
       .order("nome");
 
     if (error) {
@@ -659,6 +659,20 @@
             <option value="false" ${!u.ativo ? "selected" : ""}>Inativo</option>
           </select>
         </td>
+        <td style="min-width:170px">
+          <select class="form-select form-select-sm campo-mfa"
+            ${u.perfil === "administrador" ? "disabled" : ""}>
+            <option value="true" ${u.mfa_obrigatorio ? "selected" : ""}>Obrigatório</option>
+            <option value="false" ${!u.mfa_obrigatorio ? "selected" : ""}>Não obrigatório</option>
+          </select>
+          <div class="small mt-1 ${u.mfa_configurado_em ? "text-success" : u.mfa_obrigatorio ? "text-warning" : "text-muted"}">
+            ${u.mfa_configurado_em
+              ? "✅ Configurado"
+              : u.mfa_obrigatorio
+                ? "⏳ Pendente"
+                : "— Não exigido"}
+          </div>
+        </td>
         <td><button class="btn btn-sm btn-outline-primary" type="button"
           onclick='abrirPermissoes(${JSON.stringify(JSON.stringify({ id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, permissoes: u.permissoes || {} }))})'
           ${u.perfil === "administrador" ? "disabled title=\"Administrador possui acesso total\"" : ""}>Configurar</button></td>
@@ -675,6 +689,11 @@
     const nome = linha.querySelector(".campo-nome").value.trim();
     const perfil = linha.querySelector(".campo-perfil").value;
     const ativo = linha.querySelector(".campo-ativo").value === "true";
+    const campoMfa = linha.querySelector(".campo-mfa");
+    const mfaObrigatorio =
+      perfil === "administrador"
+        ? true
+        : campoMfa.value === "true";
 
     if (!nome) return mostrarMensagem("O nome não pode ficar vazio.", "warning");
 
@@ -682,7 +701,13 @@
     const supabase = await obterClienteSupabase();
     const { error } = await supabase
       .from("perfis_usuarios")
-      .update({ nome, perfil, ativo, atualizado_em: new Date().toISOString() })
+      .update({
+        nome,
+        perfil,
+        ativo,
+        mfa_obrigatorio: mfaObrigatorio,
+        atualizado_em: new Date().toISOString()
+      })
       .eq("id", id);
     botao.disabled = false;
 

@@ -209,8 +209,9 @@
     </div>
     <div class="fw-bold mt-3 mb-2">Permissões finais</div>
     <div id="permissoesSolicitacao" class="row g-2"></div>
-    <div class="alert alert-warning mt-3 mb-0 py-2">
-      Para aprovar, o e-mail precisa existir em <strong>Authentication → Users</strong>. Se ainda não existir, convide-o primeiro e volte para aprovar.
+    <div class="alert alert-info mt-3 mb-0 py-2">
+      Ao aprovar, o portal criará ou convidará o usuário automaticamente,
+      aplicará o perfil, as permissões e a exigência de 2FA escolhidos.
     </div>
     <div class="d-flex justify-content-end gap-2 mt-4">
       <button class="btn btn-outline-secondary" type="button" onclick="fecharSolicitacao()">Cancelar</button>
@@ -584,6 +585,38 @@
     solicitacaoEditando = null;
   }
 
+  async function prepararUsuarioDaSolicitacao(supabase, solicitacaoId) {
+    const { data, error } = await supabase.functions.invoke(
+      "aprovar-solicitacao-acesso",
+      {
+        body: {
+          solicitacao_id: Number(solicitacaoId)
+        }
+      }
+    );
+
+    if (error) {
+      let detalhe = error.message || "Falha ao executar a função de aprovação.";
+
+      try {
+        if (error.context && typeof error.context.json === "function") {
+          const resposta = await error.context.json();
+          detalhe = resposta?.mensagem || detalhe;
+        }
+      } catch (_) {}
+
+      throw new Error(detalhe);
+    }
+
+    if (!data?.sucesso) {
+      throw new Error(
+        data?.mensagem || "A função não conseguiu preparar o usuário."
+      );
+    }
+
+    return data;
+  }
+
   async function analisarSolicitacao(decisao) {
     if (!solicitacaoEditando) return;
     const perfil = document.getElementById("perfilSolicitacao").value;
@@ -597,27 +630,75 @@
     if (decisao === "aprovado" && perfil === "administrador" && !confirm("Confirma a concessão de acesso total como Administrador?")) return;
     if (decisao === "recusado" && !confirm("Confirma a recusa desta solicitação?")) return;
 
-    const botao = document.getElementById(decisao === "aprovado" ? "btnAprovarSolicitacao" : "btnRecusarSolicitacao");
-    botao.disabled = true;
-    const supabase = await obterClienteSupabase();
-    const { error } = await supabase.rpc("analisar_solicitacao_acesso", {
-      p_solicitacao_id: solicitacaoEditando.id,
-      p_decisao: decisao,
-      p_perfil: decisao === "aprovado" ? perfil : null,
-      p_permissoes: decisoesParaJson(decisao, permissoes),
-      p_observacao: observacao || null,
-      p_mfa_obrigatorio: decisao === "aprovado" ? mfaObrigatorio : false
-    });
-    botao.disabled = false;
+    const botao = document.getElementById(
+      decisao === "aprovado"
+        ? "btnAprovarSolicitacao"
+        : "btnRecusarSolicitacao"
+    );
 
-    if (error) {
-      mostrarMensagem(`Não foi possível concluir: ${error.message}`, "danger");
-      alert(error.message);
-      return;
+    const textoOriginalBotao = botao.textContent;
+    botao.disabled = true;
+
+    try {
+      const supabase = await obterClienteSupabase();
+      let preparacao = null;
+
+      if (decisao === "aprovado") {
+        botao.textContent = "Criando usuário...";
+
+        preparacao = await prepararUsuarioDaSolicitacao(
+          supabase,
+          solicitacaoEditando.id
+        );
+
+        botao.textContent = "Liberando acesso...";
+      } else {
+        botao.textContent = "Recusando...";
+      }
+
+      const { error } = await supabase.rpc(
+        "analisar_solicitacao_acesso",
+        {
+          p_solicitacao_id: solicitacaoEditando.id,
+          p_decisao: decisao,
+          p_perfil: decisao === "aprovado" ? perfil : null,
+          p_permissoes: decisoesParaJson(decisao, permissoes),
+          p_observacao: observacao || null,
+          p_mfa_obrigatorio:
+            decisao === "aprovado" ? mfaObrigatorio : false
+        }
+      );
+
+      if (error) throw error;
+
+      fecharSolicitacao();
+
+      const mensagemSucesso =
+        decisao === "aprovado"
+          ? preparacao?.convite_enviado
+            ? "Acesso aprovado. O usuário recebeu um convite por e-mail."
+            : "Acesso aprovado e liberado para o usuário existente."
+          : "Solicitação recusada.";
+
+      mostrarMensagem(mensagemSucesso, "success");
+
+      await Promise.all([
+        carregarSolicitacoes(),
+        carregarUsuarios()
+      ]);
+    } catch (erro) {
+      console.error("Erro ao analisar solicitação:", erro);
+
+      const mensagem =
+        erro?.message ||
+        "Não foi possível concluir a análise da solicitação.";
+
+      mostrarMensagem(`Não foi possível concluir: ${mensagem}`, "danger");
+      alert(mensagem);
+    } finally {
+      botao.disabled = false;
+      botao.textContent = textoOriginalBotao;
     }
-    fecharSolicitacao();
-    mostrarMensagem(decisao === "aprovado" ? "Acesso aprovado e liberado." : "Solicitação recusada.", "success");
-    await Promise.all([carregarSolicitacoes(), carregarUsuarios()]);
   }
 
   function decisoesParaJson(decisao, permissoes) {

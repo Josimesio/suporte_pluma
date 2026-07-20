@@ -10,3 +10,4 @@ config/.env
 *.backup_*.html
 *.backup_*.js
 *.py
+/python

@@ -22,42 +22,163 @@
       <p class="text-muted">Digite uma nova senha com pelo menos 8 caracteres.</p>
       <form id="formRedefinir">
         <label for="novaSenha" class="form-label">Nova senha</label>
-        <input id="novaSenha" type="password" class="form-control mb-3" minlength="8" autocomplete="new-password" required>
+        <input id="novaSenha" type="password" class="form-control mb-3" minlength="8" autocomplete="new-password" required disabled>
         <label for="confirmarSenha" class="form-label">Confirmar nova senha</label>
-        <input id="confirmarSenha" type="password" class="form-control mb-3" minlength="8" autocomplete="new-password" required>
-        <button type="submit" class="btn btn-success w-100">Salvar nova senha</button>
+        <input id="confirmarSenha" type="password" class="form-control mb-3" minlength="8" autocomplete="new-password" required disabled>
+        <button type="submit" class="btn btn-success w-100" disabled>Salvar nova senha</button>
       </form>
-      <div id="mensagem" class="mt-3 text-center"></div>
+      <div id="mensagem" class="mt-3 text-center" aria-live="polite">Validando o link de recuperação...</div>
+      <a href="login.html" class="d-block mt-3 text-center">Voltar ao login</a>
     </div>
   </main>
 
   <script>
-    document.getElementById("formRedefinir").addEventListener("submit", async function (evento) {
+    const formRedefinir = document.getElementById("formRedefinir");
+    const mensagem = document.getElementById("mensagem");
+    const camposSenha = formRedefinir.querySelectorAll("input, button[type='submit']");
+    let supabaseRecuperacao = null;
+    let sessaoRecuperacaoPronta = false;
+
+    function habilitarFormulario(habilitar) {
+      camposSenha.forEach(campo => {
+        campo.disabled = !habilitar;
+      });
+    }
+
+    function mensagemErroRecuperacao(erro) {
+      const texto = String(erro?.message || erro || "").toLowerCase();
+
+      if (
+        texto.includes("expired") ||
+        texto.includes("invalid") ||
+        texto.includes("otp") ||
+        texto.includes("code verifier") ||
+        texto.includes("session missing")
+      ) {
+        return "Este link é inválido, expirou ou já foi utilizado. Volte ao login e solicite um novo e-mail.";
+      }
+
+      return "Não foi possível validar o link de recuperação. Volte ao login e solicite um novo e-mail.";
+    }
+
+    async function obterSessaoDoLink(supabase) {
+      const parametrosUrl = new URLSearchParams(window.location.search);
+      const parametrosHash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const erroUrl = parametrosUrl.get("error_description") || parametrosHash.get("error_description");
+
+      if (erroUrl) {
+        throw new Error(erroUrl);
+      }
+
+      let { data: dadosSessao, error: erroSessao } = await supabase.auth.getSession();
+      if (erroSessao) throw erroSessao;
+      if (dadosSessao.session) return dadosSessao.session;
+
+      const codigo = parametrosUrl.get("code");
+      if (codigo) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(codigo);
+        if (error) throw error;
+        if (data.session) return data.session;
+      }
+
+      const tokenHash = parametrosUrl.get("token_hash") || parametrosHash.get("token_hash");
+      if (tokenHash) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery"
+        });
+        if (error) throw error;
+        if (data.session) return data.session;
+      }
+
+      const accessToken = parametrosHash.get("access_token") || parametrosUrl.get("access_token");
+      const refreshToken = parametrosHash.get("refresh_token") || parametrosUrl.get("refresh_token");
+      if (accessToken && refreshToken) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        if (error) throw error;
+        if (data.session) return data.session;
+      }
+
+      ({ data: dadosSessao, error: erroSessao } = await supabase.auth.getSession());
+      if (erroSessao) throw erroSessao;
+      return dadosSessao.session || null;
+    }
+
+    async function iniciarRecuperacao() {
+      habilitarFormulario(false);
+      mensagem.className = "mt-3 text-center text-muted";
+      mensagem.textContent = "Validando o link de recuperação...";
+
+      try {
+        if (window.plumaAuthPronto) {
+          await window.plumaAuthPronto;
+        }
+
+        supabaseRecuperacao = await obterClienteSupabase();
+        const sessao = await obterSessaoDoLink(supabaseRecuperacao);
+
+        if (!sessao?.user) {
+          throw new Error("Auth session missing");
+        }
+
+        sessaoRecuperacaoPronta = true;
+        habilitarFormulario(true);
+        mensagem.className = "mt-3 text-center text-success";
+        mensagem.textContent = "Link validado. Informe e confirme a nova senha.";
+
+        if (window.location.search || window.location.hash) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        document.getElementById("novaSenha").focus();
+      } catch (erro) {
+        console.error("Falha ao validar o link de recuperação:", erro);
+        sessaoRecuperacaoPronta = false;
+        habilitarFormulario(false);
+        mensagem.className = "mt-3 text-center text-danger";
+        mensagem.textContent = mensagemErroRecuperacao(erro);
+      }
+    }
+
+    formRedefinir.addEventListener("submit", async function (evento) {
       evento.preventDefault();
       const senha = document.getElementById("novaSenha").value;
       const confirmacao = document.getElementById("confirmarSenha").value;
-      const mensagem = document.getElementById("mensagem");
       const botao = this.querySelector("button[type='submit']");
 
+      if (!sessaoRecuperacaoPronta || !supabaseRecuperacao) {
+        mensagem.className = "mt-3 text-center text-danger";
+        mensagem.textContent = "O link de recuperação ainda não foi validado. Solicite um novo e-mail.";
+        return;
+      }
+
       if (senha !== confirmacao) {
+        mensagem.className = "mt-3 text-center text-danger";
         mensagem.textContent = "As senhas não são iguais.";
         return;
       }
 
       botao.disabled = true;
+      mensagem.className = "mt-3 text-center text-muted";
       mensagem.textContent = "Salvando...";
-      const supabase = await obterClienteSupabase();
-      const { error } = await supabase.auth.updateUser({ password: senha });
+      try {
+        const { error } = await supabaseRecuperacao.auth.updateUser({ password: senha });
+        if (error) throw error;
 
-      if (error) {
+        mensagem.className = "mt-3 text-center text-success";
+        mensagem.textContent = "Senha alterada. Redirecionando para o painel...";
+        setTimeout(() => window.location.replace("index.html"), 1200);
+      } catch (erro) {
         botao.disabled = false;
-        mensagem.textContent = `Não foi possível alterar: ${error.message}`;
-        return;
+        mensagem.className = "mt-3 text-center text-danger";
+        mensagem.textContent = mensagemErroRecuperacao(erro);
       }
-
-      mensagem.textContent = "Senha alterada. Redirecionando para o painel...";
-      setTimeout(() => window.location.replace("index.html"), 1200);
     });
+
+    iniciarRecuperacao();
   </script>
 </body>
 </html>

@@ -362,7 +362,7 @@
     erro.innerText = "Enviando e-mail...";
 
     const supabase = await obterClienteSupabase();
-    const destino = `${window.location.origin}${window.location.pathname.replace(/login\.html$/i, "redefinir-senha.html")}`;
+    const destino = new URL("redefinir-senha.html", window.location.href).href;
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: destino });
 
     this.disabled = false;

@@ -70,12 +70,7 @@ function parseCSV(text) {
 }
 
 function contarAbertosFechados(rows) {
-  let fechados = 0;
-  (rows || []).forEach(r => {
-    const st = (r["Status"] || "").toLowerCase();
-    if (st.includes("closed") || st.includes("resolved")) fechados++;
-  });
-  return { abertos: (rows || []).length - fechados, fechados };
+  return window.SRMetrics.calcularKPIs(rows);
 }
 
 function normalizarChaveAtualizacao(s) {
@@ -211,8 +206,8 @@ async function carregarComparativo() {
       })
     ]);
 
-    const d25 = parseCSV(t25);
-    const d26 = parseCSV(t26);
+    const d25 = window.SRMetrics.normalizarDados(parseCSV(t25), 2025);
+    const d26 = window.SRMetrics.normalizarDados(parseCSV(t26), 2026);
 
     atualizarCabecalhoPrincipal(d25, d26);
 

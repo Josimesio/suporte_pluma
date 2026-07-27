@@ -26,22 +26,7 @@
 
   // ===== CSV Parser
   function parseCSV(texto) {
-    const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-    if (!linhas.length) return [];
-
-    const cabecalho = linhas[0].split(",").map(h => h.trim());
-    if (cabecalho[0]) cabecalho[0] = cabecalho[0].replace(/^\uFEFF/, "");
-
-    const dados = [];
-    for (let i = 1; i < linhas.length; i++) {
-      const cols = linhas[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-      const obj = {};
-      for (let j = 0; j < cabecalho.length; j++) {
-        obj[cabecalho[j]] = (cols[j] || "").replace(/^"|"$/g, "").trim();
-      }
-      if (Object.values(obj).some(v => String(v || "").trim() !== "")) dados.push(obj);
-    }
-    return dados;
+    return window.SRMetrics.parseCSV(texto);
   }
 
   function contarPorCampo(lista, campo) {
@@ -106,52 +91,11 @@
   }
 
   function parseDataFlex(valor) {
-    if (!valor) return null;
-    let s = String(valor).trim().replace(/^"|"$/g, "").trim();
-    if (!s) return null;
-
-    const dRel = parseDataRelativa(s, window.__GERADO_EM_REF__);
-    if (dRel) return dRel;
-
-    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(s)) s = s.replace(" ", "T");
-
-    let d = new Date(s);
-    if (!isNaN(d)) return d;
-
-    const mBr = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-    if (mBr) {
-      const dia = parseInt(mBr[1], 10);
-      const mes = parseInt(mBr[2], 10) - 1;
-      let ano = parseInt(mBr[3], 10);
-      if (ano < 100) ano += 2000;
-      const hh = parseInt(mBr[4] || "0", 10);
-      const mm = parseInt(mBr[5] || "0", 10);
-      const ss = parseInt(mBr[6] || "0", 10);
-      d = new Date(ano, mes, dia, hh, mm, ss);
-      if (!isNaN(d)) return d;
-    }
-
-    const mEng = s.match(/^([A-Za-z]{3})\s+(\d{1,2})(?:,)?\s+(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM)?)?$/);
-    if (mEng) {
-      const mesesEng = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-      const mon = mesesEng[mEng[1]];
-      if (mon !== undefined) {
-        let hh = parseInt(mEng[4] || "0", 10);
-        const mm = parseInt(mEng[5] || "0", 10);
-        const ap = String(mEng[6] || "").toUpperCase();
-        if (ap === "PM" && hh < 12) hh += 12;
-        if (ap === "AM" && hh === 12) hh = 0;
-        d = new Date(parseInt(mEng[3], 10), mon, parseInt(mEng[2], 10), hh, mm, 0);
-        if (!isNaN(d)) return d;
-      }
-    }
-
-    return null;
+    return window.SRMetrics.parseData(valor, window.__GERADO_EM_REF__);
   }
 
   function isFechado(status) {
-    const st = String(status || "").toLowerCase();
-    return st.includes("closed") || st.includes("close requested") || st.includes("resolved") || st.includes("fechado");
+    return window.SRMetrics.isFechado(status);
   }
 
   function obterReferenciaMesAtual() {
@@ -404,13 +348,11 @@
 
     if (!totalEl || !abertosEl || !fechadosEl || !topModuloEl) return;
 
-    const total = (dados || []).length;
+    const kpis = window.SRMetrics.calcularKPIs(dados, Number(obterAnoDashboard()));
 
-    const fechados = (dados || []).filter(d => isFechado(d["Status"])).length;
-
-    totalEl.textContent = String(total);
-    abertosEl.textContent = String(total - fechados);
-    fechadosEl.textContent = String(fechados);
+    totalEl.textContent = String(kpis.total);
+    abertosEl.textContent = String(kpis.abertos);
+    fechadosEl.textContent = String(kpis.fechados);
 
     const porServico = contarPorCampo(dados, "Serviço");
     let top = "-";
@@ -431,35 +373,14 @@
     if (!totalEl || !abertosEl || !fechadosEl || !nomeEl) return;
 
     const ref = obterReferenciaMesAtual();
-    let criadosNoMes = 0;
-    let abertosNoMes = 0;
-    let fechadosNoMes = 0;
-
-    (dados || []).forEach(d => {
-      // Mesma regra do gráfico "SRs Abertos x Fechados por mês".
-      // Abertos/criados: usa somente Criado_dt.
-      const dataAbertura = parseDataFlex(d["Criado_dt"]);
-
-      if (dataAbertura && dataAbertura.getFullYear() === ref.ano && dataAbertura.getMonth() === ref.mes) {
-        criadosNoMes++;
-        abertosNoMes++;
-      }
-
-      // Fechados: usa Atualizado_dt e cai para Criado_dt/Gerado em se necessário.
-      if (isFechado(d["Status"])) {
-        let dataFechamento = parseDataFlex(d["Atualizado_dt"]);
-        if (!dataFechamento) dataFechamento = parseDataFlex(d["Criado_dt"]);
-        if (!dataFechamento) dataFechamento = parseDataFlex(d["Gerado em"] || d["Gerado_em"]);
-
-        if (dataFechamento && dataFechamento.getFullYear() === ref.ano && dataFechamento.getMonth() === ref.mes) {
-          fechadosNoMes++;
-        }
-      }
-    });
+    const series = window.SRMetrics.calcularSeriesMensais(dados, ref.ano);
+    const criadosNoMes = series.criados[ref.mes];
+    const abertosNoMes = series.abertos[ref.mes];
+    const fechadosNoMes = series.fechados[ref.mes];
 
     const nome = ref.nome.charAt(0).toUpperCase() + ref.nome.slice(1);
 
-    totalEl.textContent = String((dadosBrutos || []).length);
+    totalEl.textContent = String(window.SRMetrics.calcularKPIs(dadosBrutos, ref.ano).total);
     abertosEl.textContent = String(abertosNoMes);
     fechadosEl.textContent = String(fechadosNoMes);
     nomeEl.textContent = nome;
@@ -532,7 +453,10 @@
     const csvUrl = new URL("dados/dados_sr_2026.csv", document.baseURI).href;
     const resp = await fetch(csvUrl, { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status} ao buscar ${csvUrl}`);
-    return parseCSV(await resp.text());
+    return window.SRMetrics.normalizarDados(
+      parseCSV(await resp.text()),
+      Number(obterAnoDashboard())
+    );
   }
 
   async function iniciar() {
@@ -547,7 +471,10 @@
       const file = ev.target.files?.[0];
       if (!file) return;
       const texto = await file.text();
-      dadosBrutos = parseCSV(texto);
+      dadosBrutos = window.SRMetrics.normalizarDados(
+        parseCSV(texto),
+        Number(obterAnoDashboard())
+      );
       atualizarHeaderAtualizadoEm(dadosBrutos);
       preencherFiltros();
       atualizarPagina();

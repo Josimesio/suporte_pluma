@@ -242,8 +242,7 @@
   }
 
   function isClosedStatus(status) {
-    const s = normalize(status);
-    return s.includes('closed') || s.includes('resolved') || s.includes('close requested') || s.includes('fechado') || s.includes('resolvido');
+    return window.SRMetrics.isFechado(status);
   }
 
   function classifyImpact(severity, issue) {
@@ -358,9 +357,10 @@
   }
 
   function loadRows(rows, sourceName, veioDoOnline = false) {
+    const linhasUnicas = window.SRMetrics.normalizarDados(rows);
     state.sourceName = sourceName;
-    state.latestGeneratedDate = computeLatestGenerated(rows);
-    state.raw = rows.map(enrich);
+    state.latestGeneratedDate = computeLatestGenerated(linhasUnicas);
+    state.raw = linhasUnicas.map(enrich);
 
     els.csvName.textContent = sourceName;
     els.updatedAt.textContent = formatDateTime(state.latestGeneratedDate);

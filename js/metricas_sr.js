@@ -3,12 +3,12 @@
  * Camada única de métricas do dashboard Oracle SR.
  *
  * Regra oficial aplicada em todas as páginas:
- * - Total anual: quantidade de linhas válidas do CSV.
+ * - Total anual: quantidade de Números SR únicos criados no ano.
  * - Fechados anual: Status contendo Closed, Close Requested, Resolved ou Fechado.
  * - Abertos anual: Total - Fechados anual.
- * - Série mensal Abertos: SRs criados no mês, usando somente Criado_dt.
- * - Série mensal Fechados: SRs com status fechado, agrupadas pelo Atualizado_dt.
- * - As séries são independentes: fechar uma SR não remove a contagem de abertura do mês.
+ * - Série mensal: cada SR entra uma única vez no mês em que foi criada.
+ * - Dentro do mês, a SR é classificada pelo status atual como aberta ou fechada.
+ * - Em cada mês: Abertos + Fechados = Criados.
  */
 (function () {
   "use strict";
@@ -32,8 +32,9 @@
       }
     }
 
+    const delimRegex = delim.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const splitLinha = (line) =>
-      line.split(new RegExp(`${delim}(?=(?:[^"]*"[^"]*")*[^"]*$)`));
+      line.split(new RegExp(`${delimRegex}(?=(?:[^"]*"[^"]*")*[^"]*$)`));
 
     const cabecalho = splitLinha(headerLine).map(h => h.trim().replace(/^"|"$/g, ""));
     const dados = [];
@@ -42,7 +43,10 @@
       const cols = splitLinha(linhas[i]);
       const obj = {};
       for (let j = 0; j < cabecalho.length; j++) {
-        obj[cabecalho[j]] = (cols[j] || "").replace(/^"|"$/g, "").trim();
+        obj[cabecalho[j]] = (cols[j] || "")
+          .replace(/^"|"$/g, "")
+          .replace(/""/g, '"')
+          .trim();
       }
       if (Object.values(obj).some(v => String(v || "").trim() !== "")) dados.push(obj);
     }
@@ -174,49 +178,139 @@
   }
 
   function isFechado(status) {
-    const st = String(status || "").toLowerCase();
-    return st.includes("closed") || st.includes("close requested") || st.includes("resolved") || st.includes("fechado");
+    const st = String(status || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+    return st.includes("closed") ||
+      st.includes("close requested") ||
+      st.includes("resolved") ||
+      st.includes("resolvido") ||
+      st.includes("fechado") ||
+      st.includes("fechamento solicitado");
   }
 
   function mesmoAno(dt, ano) {
     return !ano || (dt && dt.getFullYear() === Number(ano));
   }
 
+  function primeiroValor(row, campos) {
+    for (const campo of campos) {
+      const valor = row?.[campo];
+      if (valor !== undefined && valor !== null && String(valor).trim() !== "") return valor;
+    }
+    return "";
+  }
+
   function dataAbertura(row, baseRef) {
-    return parseData(row?.["Criado_dt"], baseRef);
+    return parseData(primeiroValor(row, ["Criado_dt", "Created", "Criado", "created_at"]), baseRef);
   }
 
   function dataFechamento(row, baseRef) {
     if (!isFechado(row?.["Status"])) return null;
-    return parseData(row?.["Atualizado_dt"], baseRef) || parseData(row?.["Criado_dt"], baseRef) || parseData(row?.["Gerado em"], baseRef);
+    return parseData(primeiroValor(row, ["Closed", "Fechado"]), baseRef) ||
+      parseData(primeiroValor(row, ["Atualizado_dt", "Updated", "updated_at"]), baseRef) ||
+      dataAbertura(row, baseRef) ||
+      parseData(primeiroValor(row, ["Gerado em", "Gerado_em"]), baseRef);
+  }
+
+  function numeroSR(row) {
+    return String(primeiroValor(row, [
+      "Número SR",
+      "Numero SR",
+      "SR Number",
+      "Service Request",
+      "SR",
+      "numero_sr"
+    ])).trim();
+  }
+
+  function chaveSR(row) {
+    return numeroSR(row).toUpperCase().replace(/\s+/g, "");
+  }
+
+  function dataAtualizacao(row, baseRef) {
+    return parseData(primeiroValor(row, ["Atualizado_dt", "Updated", "updated_at"]), baseRef) ||
+      parseData(primeiroValor(row, ["Gerado em", "Gerado_em"]), baseRef) ||
+      dataFechamento(row, baseRef) ||
+      dataAbertura(row, baseRef);
+  }
+
+  function deduplicarSRs(rows, baseRef) {
+    const unicos = new Map();
+
+    (rows || []).forEach(row => {
+      const chave = chaveSR(row);
+      if (!chave) return;
+
+      const anterior = unicos.get(chave);
+      if (!anterior) {
+        unicos.set(chave, row);
+        return;
+      }
+
+      const dataAnterior = dataAtualizacao(anterior, baseRef);
+      const dataAtual = dataAtualizacao(row, baseRef);
+      const tempoAnterior = dataAnterior ? dataAnterior.getTime() : -Infinity;
+      const tempoAtual = dataAtual ? dataAtual.getTime() : -Infinity;
+
+      if (tempoAtual > tempoAnterior ||
+          (tempoAtual === tempoAnterior && isFechado(row?.["Status"]) && !isFechado(anterior?.["Status"]))) {
+        unicos.set(chave, row);
+      }
+    });
+
+    return [...unicos.values()];
+  }
+
+  function normalizarDados(rows, ano) {
+    const anoNumero = Number(ano) || null;
+    const referenciaCSV = extrairUltimoValorAtualizacao(rows);
+    const baseRef = referenciaCSV || (anoNumero ? `${anoNumero}-12-31` : "");
+    const unicos = deduplicarSRs(rows, baseRef);
+
+    if (!anoNumero) return unicos;
+
+    return unicos.filter(row => {
+      const abertura = dataAbertura(row, baseRef);
+      if (abertura) return abertura.getFullYear() === anoNumero;
+
+      const anoRegistro = Number(row?.ano ?? row?.["Ano"] ?? row?.["ANO"]);
+      return anoRegistro === anoNumero;
+    });
   }
 
   function calcularSeriesMensais(rows, ano) {
-    const aberturasBase = Array(12).fill(0);
+    const criados = Array(12).fill(0);
+    const abertos = Array(12).fill(0);
     const fechados = Array(12).fill(0);
     const semDataAbertura = [];
     const semDataFechamento = [];
 
-    const baseRef = extrairUltimoValorAtualizacao(rows);
+    const normalizados = normalizarDados(rows, ano);
+    const baseRef = extrairUltimoValorAtualizacao(normalizados) || (ano ? `${ano}-12-31` : "");
 
-    (rows || []).forEach(row => {
+    normalizados.forEach(row => {
       const da = dataAbertura(row, baseRef);
-      if (da && mesmoAno(da, ano)) aberturasBase[da.getMonth()]++;
-      else if (!da) semDataAbertura.push(row);
+      if (!da || !mesmoAno(da, ano)) {
+        semDataAbertura.push(row);
+        return;
+      }
 
-      const df = dataFechamento(row, baseRef);
-      if (df && mesmoAno(df, ano)) fechados[df.getMonth()]++;
-      else if (isFechado(row?.["Status"]) && !df) semDataFechamento.push(row);
+      const mes = da.getMonth();
+      criados[mes]++;
+      if (isFechado(row?.["Status"])) fechados[mes]++;
+      else abertos[mes]++;
     });
 
-    const abertos = aberturasBase;
-
-    return { abertos, criados: aberturasBase, fechados, semDataAbertura, semDataFechamento };
+    return { abertos, criados, fechados, semDataAbertura, semDataFechamento };
   }
 
-  function calcularKPIs(rows) {
-    const total = (rows || []).length;
-    const fechados = (rows || []).filter(r => isFechado(r?.["Status"])).length;
+  function calcularKPIs(rows, ano) {
+    const normalizados = normalizarDados(rows, ano);
+    const total = normalizados.length;
+    const fechados = normalizados.filter(r => isFechado(r?.["Status"])).length;
     return { total, abertos: total - fechados, fechados };
   }
 
@@ -254,6 +348,9 @@
     parseCSV,
     parseData,
     isFechado,
+    numeroSR,
+    deduplicarSRs,
+    normalizarDados,
     dataAbertura,
     dataFechamento,
     calcularSeriesMensais,

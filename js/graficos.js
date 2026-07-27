@@ -297,12 +297,11 @@
 
   /* ===== KPIs ===== */
   function atualizarKPIs(lista) {
-    const total = lista.length;
-    const fech = lista.filter(d => isFechado(d["Status"])).length;
+    const kpis = window.SRMetrics.calcularKPIs(lista, obterAnoDashboard());
 
-    kpiTotal.textContent = total;
-    kpiFechados.textContent = fech;
-    kpiAbertos.textContent = total - fech;
+    kpiTotal.textContent = kpis.total;
+    kpiFechados.textContent = kpis.fechados;
+    kpiAbertos.textContent = kpis.abertos;
 
     const porServ = contarPorCampo(lista, "Serviço");
     const top = Object.entries(porServ).sort((a,b)=>b[1]-a[1])[0];
@@ -310,42 +309,11 @@
   }
 
 
-  function calcularSeriesMensais(lista) {
-    const criados = Array(12).fill(0);
-    const fechados = Array(12).fill(0);
-    let semDataAbertura = 0;
-    let semDataFechamento = 0;
-    const ano = obterAnoDashboard();
-
-    (lista || []).forEach(d => {
-      const dataAbertura = parseDataFlex(d["Criado_dt"]);
-      if (dataAbertura) criados[dataAbertura.getMonth()]++;
-      else semDataAbertura++;
-
-      if (isFechado(d["Status"])) {
-        let dataFechamento = parseDataFlex(d["Atualizado_dt"]);
-
-        // Preserva a regra já utilizada pela página de 2025.
-        if (ano === 2025 && !dataFechamento) dataFechamento = parseDataFlex(d["Criado_dt"]);
-        if (ano === 2025 && !dataFechamento) dataFechamento = parseDataFlex(d["Gerado em"] || d["Gerado_em"]);
-
-        if (dataFechamento) fechados[dataFechamento.getMonth()]++;
-        else semDataFechamento++;
-      }
-    });
-
-    if (semDataAbertura || semDataFechamento) {
-      console.warn("SRs ignorados por data inválida (abertura/fechamento):", semDataAbertura, semDataFechamento);
-    }
-
-    return { criados, fechados };
-  }
-
   /* ===== GRÁFICOS ===== */
 
   function atualizarGraficoCriadosMes(lista) {
     const series = window.SRMetrics.calcularSeriesMensais(lista, obterAnoDashboard());
-    const contagem = series.abertos;
+    const contagem = series.criados;
 
     chartCriadosMes?.destroy();
     chartCriadosMes = new Chart(canvasCriados, {
@@ -419,8 +387,9 @@
     for (let i = 0; i < 12; i++) {
       const a = abertos[i];
       const f = fechados[i];
+      const totalMes = a + f;
       tbodyAfx.insertAdjacentHTML("beforeend",
-        `<tr><td>${MESES[i]}</td><td>${a}</td><td>${f}</td><td>${a ? ((f/a)*100).toFixed(1)+"%" : "-"}</td></tr>`
+        `<tr><td>${MESES[i]}</td><td>${a}</td><td>${f}</td><td>${totalMes ? ((f/totalMes)*100).toFixed(1)+"%" : "-"}</td></tr>`
       );
     }
   }
@@ -525,7 +494,7 @@ function atualizarGraficoServico(lista) {
   fetch(`dados/dados_sr_${obterAnoDashboard()}.csv`, { cache: "no-store" })
     .then(r => r.text())
     .then(texto => {
-      dados = parseCSV(texto);
+      dados = window.SRMetrics.normalizarDados(parseCSV(texto), obterAnoDashboard());
 
       atualizarAtualizadoEm(dados); // 👈 única chamada nova
 

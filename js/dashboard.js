@@ -13,12 +13,7 @@ function parseCSV(text) {
 }
 
 function contarAbertosFechados(dados) {
-  let fechados = 0;
-  dados.forEach(d => {
-    const st = (d["Status"] || "").toLowerCase();
-    if (st.includes("closed") || st.includes("resolved")) fechados++;
-  });
-  return { abertos: dados.length - fechados, fechados };
+  return window.SRMetrics.calcularKPIs(dados);
 }
 
 async function carregarGraficoComparativoAnos() {
@@ -27,8 +22,8 @@ async function carregarGraficoComparativoAnos() {
     fetch("dados/dados_sr_2026.csv").then(r => r.text())
   ]);
 
-  const d2025 = contarAbertosFechados(parseCSV(csv2025));
-  const d2026 = contarAbertosFechados(parseCSV(csv2026));
+  const d2025 = contarAbertosFechados(window.SRMetrics.normalizarDados(parseCSV(csv2025), 2025));
+  const d2026 = contarAbertosFechados(window.SRMetrics.normalizarDados(parseCSV(csv2026), 2026));
 
   const ctx = document.getElementById("graficoComparativoAnos");
   if (!ctx) return;

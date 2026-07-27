@@ -154,48 +154,7 @@
   }
 
   function parseDataFlex(valor) {
-    if (!valor) return null;
-    let s = String(valor).trim().replace(/^"|"$/g, "").trim();
-    if (!s) return null;
-
-    const dRel = parseDataRelativa(s, window.__GERADO_EM_REF__);
-    if (dRel) return dRel;
-
-    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(s)) s = s.replace(" ", "T");
-
-    let d = new Date(s);
-    if (!isNaN(d)) return d;
-
-    const mBr = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-    if (mBr) {
-      let ano = parseInt(mBr[3], 10);
-      if (ano < 100) ano += 2000;
-      d = new Date(
-        ano,
-        parseInt(mBr[2], 10) - 1,
-        parseInt(mBr[1], 10),
-        parseInt(mBr[4] || "0", 10),
-        parseInt(mBr[5] || "0", 10),
-        parseInt(mBr[6] || "0", 10)
-      );
-      if (!isNaN(d)) return d;
-    }
-
-    const mEng = s.match(/^([A-Za-z]{3})\s+(\d{1,2})(?:,)?\s+(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM)?)?$/);
-    if (mEng) {
-      const mesesEng = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-      const mon = mesesEng[mEng[1]];
-      if (mon !== undefined) {
-        let hh = parseInt(mEng[4] || "0", 10);
-        const mm = parseInt(mEng[5] || "0", 10);
-        const ap = String(mEng[6] || "").toUpperCase();
-        if (ap === "PM" && hh < 12) hh += 12;
-        if (ap === "AM" && hh === 12) hh = 0;
-        d = new Date(parseInt(mEng[3], 10), mon, parseInt(mEng[2], 10), hh, mm, 0);
-        if (!isNaN(d)) return d;
-      }
-    }
-    return null;
+    return window.SRMetrics.parseData(valor, window.__GERADO_EM_REF__);
   }
 
   function fmtData(dt) {
@@ -210,9 +169,8 @@
   }
 
   function isFechado(status, closedRaw) {
-    const st = String(status || "").toLowerCase();
     if (String(closedRaw || "").trim()) return true;
-    return st.includes("closed") || st.includes("close requested") || st.includes("resolved") || st.includes("fechado");
+    return window.SRMetrics.isFechado(status);
   }
 
   function obterAnoPagina() {
@@ -566,6 +524,7 @@
   }
 
   function render(dados, origem) {
+    dados = window.SRMetrics.normalizarDados(dados, Number(obterAnoPagina()));
     dadosBrutos = dados;
     linhasSla = dados.map(calcularLinhaSLA);
 

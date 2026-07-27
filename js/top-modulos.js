@@ -17,35 +17,7 @@
   let chartTop = null;
 
   function parseCSV(texto) {
-    const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-    if (!linhas.length) return [];
-
-    const headerLine = linhas[0].replace(/^\uFEFF/, "");
-    const candidatos = [",", ";", "\t", "|"];
-
-    let delim = ",";
-    let maxCols = 1;
-    for (const d of candidatos) {
-      const cols = headerLine.split(d).length;
-      if (cols > maxCols) { maxCols = cols; delim = d; }
-    }
-    if (maxCols <= 1) return [];
-
-    const splitLinha = (line) =>
-      line.split(new RegExp(`${delim}(?=(?:[^"]*"[^"]*")*[^"]*$)`));
-
-    const cabecalho = splitLinha(headerLine).map(h => h.trim().replace(/^"|"$/g, ""));
-    const dados = [];
-
-    for (let i = 1; i < linhas.length; i++) {
-      const cols = splitLinha(linhas[i]);
-      const obj = {};
-      for (let j = 0; j < cabecalho.length; j++) {
-        obj[cabecalho[j]] = (cols[j] || "").replace(/^"|"$/g, "").trim();
-      }
-      if (Object.values(obj).some(v => v && String(v).trim() !== "")) dados.push(obj);
-    }
-    return dados;
+    return window.SRMetrics.parseCSV(texto);
   }
 
   function atualizarAtualizadoEm(dados) {
@@ -102,6 +74,8 @@
   }
 
   function render(dados) {
+    dados = window.SRMetrics.normalizarDados(dados, Number(anoPagina));
+
     if (!Array.isArray(dados) || !dados.length) {
       statusBox.className = "alert alert-warning py-2 mb-0";
       statusBox.innerHTML = "CSV carregou, mas veio sem linhas válidas. Selecione o CSV abaixo.";

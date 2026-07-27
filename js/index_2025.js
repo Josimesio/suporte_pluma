@@ -26,22 +26,7 @@
 
   // ===== CSV Parser
   function parseCSV(texto) {
-    const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-    if (!linhas.length) return [];
-
-    const cabecalho = linhas[0].split(",").map(h => h.trim());
-    if (cabecalho[0]) cabecalho[0] = cabecalho[0].replace(/^\uFEFF/, "");
-
-    const dados = [];
-    for (let i = 1; i < linhas.length; i++) {
-      const cols = linhas[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-      const obj = {};
-      for (let j = 0; j < cabecalho.length; j++) {
-        obj[cabecalho[j]] = (cols[j] || "").replace(/^"|"$/g, "").trim();
-      }
-      if (Object.values(obj).some(v => String(v || "").trim() !== "")) dados.push(obj);
-    }
-    return dados;
+    return window.SRMetrics.parseCSV(texto);
   }
 
   function contarPorCampo(lista, campo) {
@@ -327,16 +312,11 @@
 
     if (!totalEl || !abertosEl || !fechadosEl || !topModuloEl) return;
 
-    const total = (dados || []).length;
+    const kpis = window.SRMetrics.calcularKPIs(dados, Number(obterAnoDashboard()));
 
-    const fechados = (dados || []).filter(d => {
-      const st = String(d["Status"] || "").toLowerCase();
-      return st.includes("closed") || st.includes("close requested") || st.includes("resolved") || st.includes("fechado");
-    }).length;
-
-    totalEl.textContent = String(total);
-    abertosEl.textContent = String(total - fechados);
-    fechadosEl.textContent = String(fechados);
+    totalEl.textContent = String(kpis.total);
+    abertosEl.textContent = String(kpis.abertos);
+    fechadosEl.textContent = String(kpis.fechados);
 
     const porServico = contarPorCampo(dados, "Serviço");
     let top = "-";
@@ -412,7 +392,10 @@
     const csvUrl = new URL("dados/dados_sr_2025.csv", document.baseURI).href;
     const resp = await fetch(csvUrl, { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status} ao buscar ${csvUrl}`);
-    return parseCSV(await resp.text());
+    return window.SRMetrics.normalizarDados(
+      parseCSV(await resp.text()),
+      Number(obterAnoDashboard())
+    );
   }
 
   async function iniciar() {
@@ -427,7 +410,10 @@
       const file = ev.target.files?.[0];
       if (!file) return;
       const texto = await file.text();
-      dadosBrutos = parseCSV(texto);
+      dadosBrutos = window.SRMetrics.normalizarDados(
+        parseCSV(texto),
+        Number(obterAnoDashboard())
+      );
       atualizarHeaderAtualizadoEm(dadosBrutos);
       preencherFiltros();
       atualizarPagina();

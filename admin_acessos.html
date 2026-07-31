@@ -109,7 +109,7 @@
           </div>
           <div class="table-responsive">
             <table class="table table-striped table-hover table-sm align-middle mb-0">
-              <thead><tr><th>Solicitante</th><th>Setor / Cargo</th><th>Gestor</th><th>Motivo</th><th>Data</th><th>Status</th><th>Ação</th></tr></thead>
+              <thead><tr><th>Solicitante</th><th>Setor / Cargo</th><th>Gestor</th><th>Motivo</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead>
               <tbody id="tbodySolicitacoes"></tbody>
             </table>
           </div>
@@ -532,8 +532,65 @@
         <td class="lista-resumo">${escapar(item.motivo || "-")}</td>
         <td>${formatarData(item.criado_em)}</td>
         <td><span class="badge ${item.status === "pendente" ? "text-bg-warning" : item.status === "aprovado" ? "text-bg-success" : "text-bg-secondary"}">${escapar(item.status)}</span></td>
-        <td><button class="btn btn-sm btn-primary" type="button" onclick="abrirSolicitacao(decodeURIComponent('${encodeURIComponent(JSON.stringify(item))}'))" ${item.status !== "pendente" ? "disabled" : ""}>Analisar</button></td>
+        <td>
+          <div class="d-flex gap-1 flex-wrap">
+            ${item.status === "pendente" ? `
+              <button class="btn btn-sm btn-primary" type="button"
+                onclick="abrirSolicitacao(decodeURIComponent('${encodeURIComponent(JSON.stringify(item))}'))">
+                Analisar
+              </button>` : ""}
+            ${item.status === "aprovado" ? `
+              <button class="btn btn-sm btn-success" type="button"
+                onclick="enviarEmailConfirmacaoAcesso(this, decodeURIComponent('${encodeURIComponent(item.email)}'))"
+                title="Enviar e-mail informando que o acesso foi autorizado">
+                ✉️ Enviar confirmação
+              </button>` : ""}
+            ${item.status !== "pendente" && item.status !== "aprovado" ? '<span class="text-muted">—</span>' : ""}
+          </div>
+        </td>
       </tr>`).join("") : '<tr><td colspan="7" class="text-center text-muted py-3">Nenhuma solicitação encontrada.</td></tr>';
+  }
+
+  async function enviarEmailConfirmacaoAcesso(botao, email) {
+    if (!email) {
+      mostrarMensagem("A solicitação não possui um e-mail válido.", "danger");
+      return;
+    }
+
+    const textoOriginal = botao.textContent;
+    botao.disabled = true;
+    botao.textContent = "Enviando...";
+
+    try {
+      const supabase = await obterClienteSupabase();
+      const { data, error } = await supabase.functions.invoke(
+        "enviar-confirmacao-acesso",
+        { body: { email } }
+      );
+
+      if (error) {
+        let detalhe = error.message || "Falha ao enviar a confirmação.";
+        try {
+          if (error.context && typeof error.context.json === "function") {
+            const resposta = await error.context.json();
+            detalhe = resposta?.mensagem || detalhe;
+          }
+        } catch (_) {}
+        throw new Error(detalhe);
+      }
+
+      if (!data?.sucesso) {
+        throw new Error(data?.mensagem || "O servidor não confirmou o envio.");
+      }
+
+      mostrarMensagem(`Confirmação enviada para ${email}.`, "success");
+      botao.textContent = "✓ Confirmação enviada";
+    } catch (erro) {
+      console.error("Erro ao enviar confirmação:", erro);
+      mostrarMensagem(erro?.message || "Não foi possível enviar a confirmação.", "danger");
+      botao.disabled = false;
+      botao.textContent = textoOriginal;
+    }
   }
 
   function abrirSolicitacao(dadosTexto) {

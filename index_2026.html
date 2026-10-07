@@ -297,7 +297,11 @@
             <div class="card-body py-2 d-flex flex-column h-100">
               <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-2">
                 <h2 class="card-title fs-6 mb-0">Lista de Chamados (SRs)</h2>
-                <span class="small text-muted">Use filtros + busca pra ir no alvo 🎯</span>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <span class="small text-muted">Use filtros + busca pra ir no alvo 🎯</span>
+                  <button id="btnExportarExcel" type="button" class="btn btn-sm btn-success" disabled>Exportar Excel</button>
+                  <span id="mensagemExportacaoChamados" class="visually-hidden" role="status" aria-live="polite"></span>
+                </div>
               </div>
 
               <div class="tabela-container flex-grow-1">
@@ -460,5 +464,7 @@
   </script>
 
 <script src="js/atualizado-destaque.js?v=20260717-2"></script>
+<script src="js/vendor/jszip.min.js?v=20261007-1"></script>
+<script src="js/exportar-chamados-excel.js?v=20261007-2"></script>
 </body>
 </html>

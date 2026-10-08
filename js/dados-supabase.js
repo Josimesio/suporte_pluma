@@ -43,7 +43,7 @@
     for (let inicio = 0; ; inicio += tamanhoPagina) {
       const { data, error } = await supabase
         .from("chamados_oracle")
-        .select("ano,numero_sr,resumo,issue_type,servico,status,severidade,criado_texto,atualizado_texto,fechado_texto,contato_primario,grupo_usuario,tenancy,impacto_negocio,conta,referencia_cliente,criado_por,atualizado_por,url_recurso,gerado_em_texto,dados_originais")
+        .select("ano,numero_sr,resumo,issue_type,servico,status,severidade,criado_texto,atualizado_texto,fechado_texto,contato_primario,grupo_usuario,tenancy,impacto_negocio,conta,referencia_cliente,criado_por,atualizado_por,url_recurso,gerado_em_texto,dados_originais,portal_versao,portal_atualizado_em,portal_atualizado_por,portal_atualizado_nome,portal_atualizado_email")
         .eq("ano", ano)
         .order("numero_sr")
         .range(inicio, inicio + tamanhoPagina - 1);
@@ -56,9 +56,70 @@
   }
 
   function carregarAno(ano) {
-    if (!cachePorAno.has(ano)) cachePorAno.set(ano, consultarAno(ano));
+    if (!cachePorAno.has(ano)) cachePorAno.set(ano, consultarAno(ano).catch(error => {
+      cachePorAno.delete(ano);
+      throw error;
+    }));
     return cachePorAno.get(ano);
   }
+
+  // A planilha e os painéis consultam a mesma base. O banco mantém suas políticas de acesso.
+  const camposEditaveis = new Set([
+    "resumo", "issue_type", "servico", "status", "severidade", "criado_texto",
+    "atualizado_texto", "fechado_texto", "contato_primario", "grupo_usuario", "tenancy",
+    "impacto_negocio", "conta", "referencia_cliente", "url_recurso"
+  ]);
+
+  window.PlumaDadosOracle = {
+    async carregar(ano, recarregar = false) {
+      if (![2025, 2026].includes(Number(ano))) throw new Error("Ano inválido.");
+      if (recarregar) cachePorAno.delete(Number(ano));
+      const registros = await carregarAno(Number(ano));
+      return registros.map(item => ({ ...item }));
+    },
+    async salvar(ano, numeroSr, alteracoes, original) {
+      await aguardarAutenticacao();
+      if (!window.usuarioPodeEditarPlanilhas?.(ano)) {
+        throw new Error("Somente Administrador e Gestor podem editar e salvar a planilha.");
+      }
+      if (![2025, 2026].includes(Number(ano)) || !numeroSr ||
+          Number(original?.ano) !== Number(ano) || original?.numero_sr !== numeroSr) {
+        throw new Error("Identificação do chamado inválida.");
+      }
+      const campos = Object.keys(alteracoes);
+      if (!campos.length || campos.some(c => !camposEditaveis.has(c))) {
+        throw new Error("Campo não permitido para edição.");
+      }
+      const valores = {};
+      for (const campo of campos) valores[campo] = String(alteracoes[campo] ?? "");
+      const supabase = await window.obterClienteSupabase();
+      let consulta = supabase.from("chamados_oracle").update(valores)
+        .eq("ano", Number(ano)).eq("numero_sr", numeroSr);
+      if (!Number.isInteger(original.portal_versao)) throw new Error("Execute sql/ATUALIZAR_ABAS_LOGS_V10.sql antes de salvar a planilha.");
+      consulta = consulta.eq("portal_versao", original.portal_versao);
+      // Evita sobrescrever o mesmo campo alterado por outra pessoa após a leitura.
+      for (const campo of campos) {
+        consulta = original[campo] == null
+          ? consulta.is(campo, null) : consulta.eq(campo, original[campo]);
+      }
+      const { data, error } = await consulta.select();
+      if (error) throw new Error(error.message || "Não foi possível salvar o chamado.");
+      if (!data || data.length !== 1) {
+        throw new Error("O registro mudou desde a leitura ou seu acesso não permite gravar. Recarregue os dados e confira a permissão de edição.");
+      }
+      cachePorAno.delete(Number(ano));
+      return data[0];
+    },
+    async historico(ano, numeroSr, offset = 0) {
+      await aguardarAutenticacao();
+      const supabase = await window.obterClienteSupabase();
+      const { data, error } = await supabase.from("chamados_oracle_versoes")
+        .select("id,ano,numero_sr,versao,depois,alteracoes,acao,usuario_id,usuario_nome,usuario_email,alterado_em")
+        .eq("ano", Number(ano)).eq("numero_sr", numeroSr).order("versao", { ascending: false }).range(offset, offset + 19);
+      if (error) throw new Error(error.message || "Não foi possível consultar o histórico do chamado.");
+      return data || [];
+    }
+  };
 
   function registroCompativel(item) {
     return Object.assign({}, item.dados_originais || {}, {
@@ -87,7 +148,11 @@
       "Created By": item.criado_por || "",
       "Updated By": item.atualizado_por || "",
       "Resource Url": item.url_recurso || "",
-      "Gerado em": item.gerado_em_texto || item.atualizado_texto || ""
+      "Gerado em": item.gerado_em_texto || item.atualizado_texto || "",
+      portal_versao: item.portal_versao || "",
+      portal_atualizado_em: item.portal_atualizado_em || "",
+      portal_atualizado_nome: item.portal_atualizado_nome || "",
+      portal_atualizado_email: item.portal_atualizado_email || ""
     });
   }
 

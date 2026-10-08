@@ -48,25 +48,7 @@ async function irPara(ano, pagina) {
 
 // ---------- CSV + SLA básico de status ----------
 function parseCSV(text) {
-  const lines = String(text || "").split(/\r?\n/).filter(l => l.trim() !== "");
-  if (!lines.length) return [];
-
-  const headerLine = lines[0].replace(/^\uFEFF/, "");
-  const headers = headerLine.split(",").map(h => h.trim());
-
-  const splitCSV = (line) => line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-
-  const data = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = splitCSV(lines[i]);
-    const obj = {};
-    for (let j = 0; j < headers.length; j++) {
-      const key = headers[j];
-      obj[key] = (cols[j] || "").replace(/^"|"$/g, "").trim();
-    }
-    if (Object.values(obj).some(v => v && String(v).trim() !== "")) data.push(obj);
-  }
-  return data;
+  return window.SRMetrics.parseCSV(text);
 }
 
 function contarAbertosFechados(rows) {
@@ -249,12 +231,19 @@ async function carregarComparativo() {
     msg(anosDisponiveis.map(item =>
       `${item.ano}: <b>${item.contagem.abertos}</b> abertos / <b>${item.contagem.fechados}</b> fechados`
     ).join(" • "), "success");
+    return true;
   } catch (e) {
     console.warn(e);
     msg(e.message, "warning");
+    return false;
   }
 }
 
 aplicarPermissoesPaginaInicial();
 
 carregarComparativo();
+
+window.addEventListener("pluma:planilha-salva", async () => {
+  if (await carregarComparativo()) window.dispatchEvent(new CustomEvent("pluma:painel-atualizado"));
+  else window.dispatchEvent(new CustomEvent("pluma:painel-erro", { detail: { message: "Recarregue a página para atualizar os indicadores." } }));
+});

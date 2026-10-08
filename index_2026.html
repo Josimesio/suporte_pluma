@@ -2,10 +2,10 @@
 <html lang="pt-br">
 <head>
   <script src="js/supabase-config.js?v=20260717-2"></script>
-  <script src="js/traducao.js?v=20260717-1"></script>
+  <script src="js/traducao.js?v=20261008-v10-abas"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/auth.js?v=20260717-supabase-7"></script>
-  <script src="js/dados-supabase.js?v=20260717-3"></script>
+  <script src="js/auth.js?v=20261008-v10-abas"></script>
+  <script src="js/dados-supabase.js?v=20261008-v10-abas"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Chamados 2026 - ORACLE</title>
@@ -68,6 +68,7 @@
     }
   </style>
 
+  <link rel="stylesheet" href="css/painel-planilha.css?v=20261008-v10-abas">
 </head>
 
 <body>
@@ -113,7 +114,17 @@
       </div>
     </header>
 
-    <main class="dashboard-main flex-grow-1 d-flex flex-column">
+    <main class="dashboard-main flex-grow-1 d-flex flex-column" data-planilha-oracle="2026">
+      <nav class="sr-tabs" role="tablist" aria-label="Visualização dos chamados">
+        <button class="sr-tab" id="srPanelTab" type="button" role="tab" aria-controls="srPanel" aria-selected="true" data-sr-tab="painel">Painel</button>
+        <button class="sr-tab" id="srSheetTab" type="button" role="tab" aria-controls="srSheet" aria-selected="false" tabindex="-1" data-sr-tab="planilha" data-requer-permissao="aba_planilha" hidden>Planilha</button>
+        <button class="sr-tab" id="srWorkbookTab" type="button" role="tab" aria-controls="srWorkbook" aria-selected="false" tabindex="-1" data-sr-tab="sr" data-requer-permissao="aba_sr" hidden>SR</button>
+        <button class="sr-tab" id="srConsolidatedTab" type="button" role="tab" aria-controls="srViews" aria-selected="false" tabindex="-1" data-sr-tab="consolidado" data-requer-permissao="aba_consolidado" hidden>Consolidado</button>
+      </nav>
+      <div id="srViews" class="sr-views">
+      <section id="srPanel" class="sr-panel" role="tabpanel" aria-labelledby="srPanelTab">
+        <h2 class="sr-consolidated-title">Painel</h2>
+
 
       <!-- STATUS / ERRO / UPLOAD -->
       <section class="py-2 bg-white border-bottom">
@@ -191,7 +202,7 @@
                 id="buscaTabela"
                 class="form-control form-control-sm"
                 type="text"
-                placeholder="SR, serviço, issue type, status, contato..."
+                placeholder="SR, serviço, status, contato; no Consolidado, resumo e comentários..."
                 autocomplete="off"
               />
             </div>
@@ -291,7 +302,7 @@
       </section>
 
       <!-- LISTA -->
-      <section class="conteudo-row flex-grow-1">
+      <section class="conteudo-row flex-grow-1 sr-original-list">
         <div class="container-fluid h-100">
           <div class="card pl-card-tabela tabela-card h-100">
             <div class="card-body py-2 d-flex flex-column h-100">
@@ -327,7 +338,99 @@
         </div>
       </section>
 
-    </main>
+    
+      </section>
+      <section id="srSheet" class="sr-sheet" role="tabpanel" aria-labelledby="srSheetTab" hidden>
+        <h2 class="sr-consolidated-title">Planilha</h2>
+        <div class="sr-sheet-card">
+          <div class="sr-sheet-toolbar">
+            <div><label for="srYear">Ano</label><select id="srYear" class="form-select form-select-sm"><option value="2025">2025</option><option value="2026">2026</option></select></div>
+            <div><label for="srSearch">Buscar na planilha</label><input id="srSearch" class="form-control form-control-sm" type="search" placeholder="Número, resumo, serviço, contato..."></div>
+            <div><label for="srPageSize">Linhas por página</label><select id="srPageSize" class="form-select form-select-sm"><option>5</option><option>10</option><option selected>20</option><option>50</option><option>100</option><option value="all">Todas</option></select></div>
+            <div class="sr-sheet-actions">
+              <button id="srReload" type="button" class="btn btn-sm btn-outline-secondary">Recarregar</button>
+              <button id="srDiscard" type="button" class="btn btn-sm btn-outline-secondary" disabled>Descartar alterações</button>
+              <button id="srExport" type="button" class="btn btn-sm btn-outline-success" disabled>Baixar Excel</button>
+              <button id="srSave" type="button" class="btn btn-sm btn-success" disabled>Salvar e atualizar painel</button>
+            </div>
+          </div>
+          <div class="sr-sheet-meta"><span id="srCount">0 chamados</span><span id="srPending">Nenhuma alteração pendente</span><span id="srSync"></span></div>
+          <p id="srEditHelp" class="small text-muted mx-3 mt-3 mb-0">Edite os dados dos chamados nesta aba.</p>
+          <div id="srSheetStatus" class="sr-sheet-status" role="status" aria-live="polite" hidden></div>
+          <div class="sr-sheet-scroll" tabindex="0" role="region" aria-label="Planilha editável de chamados">
+            <table class="sr-grid"><thead><tr id="srSheetHead"></tr></thead><tbody id="srSheetBody"></tbody></table>
+          </div>
+          <div class="sr-sheet-footer"><span id="srRange">0 registros</span><div class="sr-sheet-pages"><button id="srPrev" type="button" class="btn btn-sm btn-outline-secondary">Anterior</button><span id="srPageLabel">Página 1 de 1</span><button id="srNext" type="button" class="btn btn-sm btn-outline-secondary">Próxima</button></div></div>
+          <datalist id="srOptions-status"></datalist><datalist id="srOptions-servico"></datalist><datalist id="srOptions-severidade"></datalist><datalist id="srOptions-issue_type"></datalist>
+        </div>
+      </section>
+      <section id="srWorkbook" class="sr-sheet" role="tabpanel" aria-labelledby="srWorkbookTab" hidden>
+        <h2 class="sr-consolidated-title">SR — Srs_Oracle.xlsx</h2>
+        <div class="sr-sheet-card">
+          <h2 class="sr-workbook-title">SR — dados da aba SRs</h2>
+          <div class="sr-sheet-toolbar">
+<div><label for="srWorkbookSearch">Buscar na SR</label><input id="srWorkbookSearch" class="form-control form-control-sm" type="search" placeholder="SR, resumo, comentários, GAP..."></div>
+<div><label for="srWorkbookProduct">Product</label><select id="srWorkbookProduct" class="form-select form-select-sm"><option value="">Todos</option></select></div>
+<div><label for="srWorkbookSubstatus">Substatus</label><select id="srWorkbookSubstatus" class="form-select form-select-sm"><option value="">Todos</option></select></div>
+<div><label for="srWorkbookPageSize">Linhas por página</label><select id="srWorkbookPageSize" class="form-select form-select-sm"><option>5</option><option>10</option><option selected>20</option><option>50</option><option>100</option><option value="all">Todas</option></select></div>
+            <div class="sr-sheet-actions">
+              <a id="srWorkbookOriginal" href="dados/Srs_Oracle.xlsx" download class="btn btn-sm btn-outline-secondary">Arquivo original</a>
+              <button id="srWorkbookReload" type="button" class="btn btn-sm btn-outline-secondary">Recarregar SR</button>
+              <button id="srWorkbookLegacy" type="button" class="btn btn-sm btn-outline-warning" hidden>Trazer edições deste navegador</button>
+              <button id="srWorkbookDiscard" type="button" class="btn btn-sm btn-outline-secondary" disabled>Descartar alterações</button>
+              <button id="srWorkbookExport" type="button" class="btn btn-sm btn-outline-success" disabled>Baixar Excel da SR</button>
+              <button id="srWorkbookSave" type="button" class="btn btn-sm btn-success" disabled>Salvar no Supabase</button>
+            </div>
+          </div>
+          <div class="sr-sheet-meta"><span id="srWorkbookCount">Carregamento ao abrir a SR</span><span id="srWorkbookPending">Nenhuma alteração pendente</span><span id="srWorkbookSync"></span></div>
+          <p id="srWorkbookHelp" class="small text-muted mx-3 mt-3 mb-0">Dados e campos da planilha enviada.</p>
+          <div id="srWorkbookStatus" class="sr-sheet-status" role="status" aria-live="polite" hidden></div>
+          <div class="sr-sheet-scroll" tabindex="0" role="region" aria-label="Dados editáveis da aba SRs do Excel">
+            <table class="sr-grid"><thead><tr id="srWorkbookHead"></tr></thead><tbody id="srWorkbookBody"></tbody></table>
+          </div>
+          <div class="sr-sheet-footer"><span id="srWorkbookRange">0 registros</span><div class="sr-sheet-pages"><button id="srWorkbookPrev" type="button" class="btn btn-sm btn-outline-secondary">Anterior</button><span id="srWorkbookPageLabel">Página 1 de 1</span><button id="srWorkbookNext" type="button" class="btn btn-sm btn-outline-secondary">Próxima</button></div></div>
+          <datalist id="srWorkbookOptions-4"></datalist>
+          <datalist id="srWorkbookOptions-5"></datalist>
+          <datalist id="srWorkbookOptions-8"></datalist>
+          <datalist id="srWorkbookOptions-11"></datalist>
+          <datalist id="srWorkbookOptions-14"></datalist>
+          <datalist id="srWorkbookOptions-15"></datalist>
+          <datalist id="srWorkbookOptions-16"></datalist>
+          <datalist id="srWorkbookOptions-21"></datalist>
+          <datalist id="srWorkbookOptions-24"></datalist>
+        </div>
+      </section>
+      <section id="srMerged" class="sr-sheet sr-merged" role="region" aria-labelledby="srMergedTitle" hidden>
+        <div class="sr-sheet-card">
+          <h2 id="srMergedTitle" class="sr-workbook-title">Consolidado — lista de chamados + planilha SR</h2>
+          <div id="srMergedHomeFilters" class="sr-sheet-toolbar" hidden>
+            <div><label for="srMergedYear">Ano da lista</label><select id="srMergedYear" class="form-select form-select-sm"><option value="2025">2025</option><option value="2026" selected>2026</option></select></div>
+            <div><label for="srMergedService">Serviço (Módulo)</label><select id="srMergedService" class="form-select form-select-sm"><option value="">Todos</option></select></div>
+            <div><label for="srMergedListStatus">Status</label><select id="srMergedListStatus" class="form-select form-select-sm"><option value="">Todos</option></select></div>
+            <div><label for="srMergedSeverity">Severidade</label><select id="srMergedSeverity" class="form-select form-select-sm"><option value="">Todos</option></select></div>
+            <div><label for="srMergedSearch">Buscar na lista e na SR</label><input id="srMergedSearch" class="form-control form-control-sm" type="search" placeholder="SR, serviço, resumo, comentários..."></div>
+          </div>
+          <div class="sr-sheet-toolbar">
+            <div><label for="srMergedPageSize">Linhas por página</label><select id="srMergedPageSize" class="form-select form-select-sm"><option>5</option><option>10</option><option selected>20</option><option>50</option><option>100</option><option value="all">Todas</option></select></div>
+            <div class="sr-sheet-actions">
+              <button id="srMergedReload" type="button" class="btn btn-sm btn-outline-secondary">Recarregar SR</button>
+              <button id="srMergedDiscard" type="button" class="btn btn-sm btn-outline-secondary" disabled>Descartar alterações da SR</button>
+              <button id="srMergedExport" type="button" class="btn btn-sm btn-outline-success" disabled>Exportar consolidado para Excel</button>
+              <button id="srMergedSave" type="button" class="btn btn-sm btn-success" disabled>Salvar SR no Supabase</button>
+            </div>
+          </div>
+          <div class="sr-sheet-meta"><span id="srMergedCount">Carregando...</span><span id="srMergedMatches"></span><span id="srMergedPending">Nenhuma alteração pendente</span><span id="srMergedSync"></span></div>
+          <p id="srMergedHelp" class="small text-muted mx-3 mt-3 mb-0"></p>
+          <p id="srMergedNote" class="small text-muted mx-3 mt-1 mb-0"></p>
+          <div id="srMergedStatus" class="sr-sheet-status" role="status" aria-live="polite" hidden></div>
+          <div class="sr-sheet-scroll" tabindex="0" role="region" aria-label="Tabela unificada da lista de chamados e planilha SR">
+            <table class="sr-grid sr-merge-grid"><thead><tr id="srMergedGroups"></tr><tr id="srMergedHead"></tr></thead><tbody id="srMergedBody"></tbody></table>
+          </div>
+          <div class="sr-sheet-footer"><span id="srMergedRange">0 linhas</span><div class="sr-sheet-pages"><button id="srMergedPrev" type="button" class="btn btn-sm btn-outline-secondary">Anterior</button><span id="srMergedPageLabel">Página 1 de 1</span><button id="srMergedNext" type="button" class="btn btn-sm btn-outline-secondary">Próxima</button></div></div>
+        </div>
+      </section>
+      </div>
+</main>
 
     <dialog id="modalSolicitacaoAnalitico" aria-labelledby="tituloSolicitacaoAnalitico" style="width:min(600px,calc(100% - 30px));border:0;border-radius:14px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.35)">
       <div class="modal-content">
@@ -356,8 +459,16 @@
     crossorigin="anonymous"
   ></script>
 
-  <script src="js/metricas_sr.js?v=20260727-contagem-1"></script>
-<script src="js/index_2026.js?v=20260727-contagem-1"></script>
+  
+  <dialog id="srVersionDialog" class="sr-version-dialog" aria-labelledby="srVersionTitle">
+    <div class="sr-version-dialog-head"><h2 id="srVersionTitle">Histórico da SR</h2><button id="srVersionClose" type="button" class="btn btn-sm btn-outline-secondary">Fechar</button></div>
+    <p id="srVersionStatus" class="small" role="status" aria-live="polite"></p>
+    <div id="srVersionBody"></div>
+    <div class="sr-sheet-pages"><button id="srVersionPrev" type="button" class="btn btn-sm btn-outline-secondary">Versões mais recentes</button><button id="srVersionNext" type="button" class="btn btn-sm btn-outline-secondary">Versões anteriores</button></div>
+  </dialog>
+
+<script src="js/metricas_sr.js?v=20261008-planilha-1"></script>
+<script src="js/index_2026.js?v=20261008-merge-1"></script>
 <script src="js/solicitacao-analitico.js?v=20260718-2"></script>
 
 
@@ -465,6 +576,12 @@
 
 <script src="js/atualizado-destaque.js?v=20260717-2"></script>
 <script src="js/vendor/jszip.min.js?v=20261007-1"></script>
-<script src="js/exportar-chamados-excel.js?v=20261007-2"></script>
+<script src="js/exportar-chamados-excel.js?v=20261008-v10-abas"></script>
+  <script src="js/logs-abas.js?v=20261008-v10-abas"></script>
+  <script src="js/sr-supabase.js?v=20261008-v10-abas"></script>
+  <script src="js/planilha-sr.js?v=20261008-v10-abas"></script>
+  <script src="js/consolidado-sr.js?v=20261008-v10-abas"></script>
+  <script src="js/painel-planilha.js?v=20261008-v10-abas"></script>
+
 </body>
 </html>

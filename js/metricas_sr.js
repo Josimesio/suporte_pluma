@@ -16,10 +16,9 @@
   const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
   function parseCSV(texto) {
-    const linhas = String(texto || "").split(/\r?\n/).filter(l => l.trim() !== "");
-    if (!linhas.length) return [];
-
-    const headerLine = linhas[0].replace(/^\uFEFF/, "");
+    const fonte = String(texto || "").replace(/^\uFEFF/, "");
+    if (!fonte.trim()) return [];
+    const headerLine = fonte.split(/\r?\n/, 1)[0];
     const candidatos = [",", ";", "\t", "|"];
     let delim = ",";
     let maxCols = 1;
@@ -32,25 +31,23 @@
       }
     }
 
-    const delimRegex = delim.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const splitLinha = (line) =>
-      line.split(new RegExp(`${delimRegex}(?=(?:[^"]*"[^"]*")*[^"]*$)`));
-
-    const cabecalho = splitLinha(headerLine).map(h => h.trim().replace(/^"|"$/g, ""));
-    const dados = [];
-
-    for (let i = 1; i < linhas.length; i++) {
-      const cols = splitLinha(linhas[i]);
-      const obj = {};
-      for (let j = 0; j < cabecalho.length; j++) {
-        obj[cabecalho[j]] = (cols[j] || "")
-          .replace(/^"|"$/g, "")
-          .replace(/""/g, '"')
-          .trim();
-      }
-      if (Object.values(obj).some(v => String(v || "").trim() !== "")) dados.push(obj);
+    const linhas = [];
+    let linha = [], celula = "", aspas = false;
+    for (let i = 0; i < fonte.length; i++) {
+      const char = fonte[i];
+      if (char === '"') {
+        if (aspas && fonte[i + 1] === '"') { celula += '"'; i++; }
+        else aspas = !aspas;
+      } else if (char === delim && !aspas) { linha.push(celula); celula = ""; }
+      else if ((char === "\r" || char === "\n") && !aspas) {
+        linha.push(celula); if (linha.some(v => v.trim())) linhas.push(linha);
+        linha = []; celula = "";
+        if (char === "\r" && fonte[i + 1] === "\n") i++;
+      } else celula += char;
     }
-    return dados;
+    linha.push(celula); if (linha.some(v => v.trim())) linhas.push(linha);
+    const cabecalho = (linhas.shift() || []).map(h => h.trim());
+    return linhas.map(cols => Object.fromEntries(cabecalho.map((h, i) => [h, (cols[i] || "").trim()])));
   }
 
   function parseDataRelativa(valor, baseRef) {

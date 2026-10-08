@@ -95,6 +95,7 @@
   function traduzirNo(root) {
     if (!root) return;
     const tratar = node => {
+      if (node.parentElement?.closest('[data-sr-version-value]')) return;
       const original = String(node.nodeValue || "");
       const limpo = original.trim();
       if (!limpo || !traducoes[limpo]) return;

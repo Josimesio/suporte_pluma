@@ -307,6 +307,38 @@
     return perfilSessao?.perfil === "administrador" && perfilSessao?.ativo === true;
   }
 
+  function usuarioPodeVisualizarAba(aba) {
+    if (perfilSessao?.ativo !== true || !["planilha", "sr", "consolidado"].includes(aba)) return false;
+    if (perfilSessao.perfil === "administrador") return true;
+    const p = perfilSessao.permissoes || {};
+    return p[`aba_${aba}`] === true && (p.inicio === true || p.chamados_2025 === true || p.chamados_2026 === true);
+  }
+
+  let consultaPermissoesAbas;
+  async function atualizarPermissoesAbas() {
+    if (consultaPermissoesAbas) return consultaPermissoesAbas;
+    consultaPermissoesAbas = (async () => {
+      await window.plumaAuthPronto;
+      if (!usuarioSessao) throw new Error("Sessão não localizada.");
+      const sb = await iniciarCliente();
+      const { data, error } = await sb.from("perfis_usuarios")
+        .select("id,nome,email,perfil,ativo,permissoes,mfa_obrigatorio").eq("id", usuarioSessao.id).single();
+      if (error || !data) throw new Error("Não foi possível conferir as permissões do usuário.");
+      perfilSessao = { ...perfilSessao, ...data };
+      aplicarPermissoesNaInterface();
+      window.dispatchEvent(new CustomEvent("pluma:permissoes-abas"));
+      return perfilSessao;
+    })();
+    try { return await consultaPermissoesAbas; } finally { consultaPermissoesAbas = null; }
+  }
+
+  function usuarioPodeEditarPlanilhas(ano) {
+    if (perfilSessao?.ativo !== true || !["administrador", "gestor"].includes(perfilSessao.perfil)) return false;
+    if (ano == null && !usuarioPodeVisualizarAba("sr") && !usuarioPodeVisualizarAba("consolidado")) return false;
+    if (ano != null && !usuarioPodeVisualizarAba("planilha")) return false;
+    return ano == null || perfilSessao.perfil === "administrador" || perfilSessao.permissoes?.[`chamados_${Number(ano)}`] === true;
+  }
+
   async function obterClienteSupabase() {
     return iniciarCliente();
   }
@@ -325,6 +357,9 @@
   window.usuarioAtual = usuarioAtual;
   window.perfilAtual = perfilAtual;
   window.usuarioEhAdminAcessos = usuarioEhAdminAcessos;
+  window.usuarioPodeEditarPlanilhas = usuarioPodeEditarPlanilhas;
+  window.usuarioPodeVisualizarAba = usuarioPodeVisualizarAba;
+  window.atualizarPermissoesAbas = atualizarPermissoesAbas;
   window.obterClienteSupabase = obterClienteSupabase;
   window.obterNivelMfa = obterNivelMfa;
   window.limparSessao = limparSessao;

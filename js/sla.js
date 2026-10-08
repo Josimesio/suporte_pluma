@@ -99,21 +99,7 @@
   }
 
   function parseCSV(texto) {
-    const linhas = String(texto || "").split(/\r?\n/).filter(l => l.trim() !== "");
-    if (!linhas.length) return [];
-
-    const headerLine = linhas[0].replace(/^\uFEFF/, "");
-    const delim = detectarDelimitador(headerLine);
-    const headers = splitLinhaCSV(headerLine, delim).map(h => limparValor(h));
-
-    const dados = [];
-    for (let i = 1; i < linhas.length; i++) {
-      const cols = splitLinhaCSV(linhas[i], delim);
-      const obj = {};
-      headers.forEach((h, idx) => obj[h] = limparValor(cols[idx]));
-      if (Object.values(obj).some(v => String(v || "").trim() !== "")) dados.push(obj);
-    }
-    return dados;
+    return window.SRMetrics.parseCSV(texto);
   }
 
   function getCampo(row, nomes) {

@@ -356,6 +356,7 @@
     dados = aplicarBusca(dados);
     atualizarKPIs(dados);
     atualizarTabela(dados);
+    window.dispatchEvent(new CustomEvent("pluma:lista-atualizada"));
   }
 
   // ===== Modo TV
@@ -440,5 +441,25 @@
     }
   }
 
+  window.addEventListener("pluma:planilha-salva", async event => {
+    if (Number(event.detail?.ano) !== Number(obterAnoDashboard())) return;
+    try {
+      dadosBrutos = await carregarDadosViaFetch();
+      atualizarHeaderAtualizadoEm(dadosBrutos);
+      preencherFiltros();
+      atualizarPagina();
+      setStatus("success", "Painel atualizado com as alterações da planilha.");
+      window.dispatchEvent(new CustomEvent("pluma:painel-atualizado"));
+    } catch (error) {
+      setStatus("danger", "A planilha foi salva, mas o painel não atualizou: " + error.message);
+      window.dispatchEvent(new CustomEvent("pluma:painel-erro", {detail: {message: error.message}}));
+    }
+  });
+
+  window.PlumaListaOracle = {
+    snapshot() { return { todos: dadosBrutos, filtrados: filtrarDados(), busca: document.getElementById("buscaTabela")?.value || "" }; },
+    atualizarIndicadores: atualizarKPIs,
+    restaurar: atualizarPagina
+  };
   iniciar();
 })();

@@ -6,7 +6,7 @@
   <title>Analítico do Portal - Suporte ORACLE</title>
   <script src="js/supabase-config.js?v=20260717-2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/auth.js?v=20260718-analytics-1"></script>
+  <script src="js/auth.js?v=20261008-v10-abas"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/estilo.css?v=20260427-2">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -33,6 +33,31 @@
         <div><label for="periodoAnalytics" class="form-label small fw-bold mb-1">Período</label><select id="periodoAnalytics" class="form-select" onchange="carregarAnaliticoPortal()"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="0">Todo o histórico</option></select></div>
       </div>
 
+      <section class="card analytics-card mb-4" aria-labelledby="tituloLogsAbas">
+        <div class="card-header d-flex justify-content-between align-items-center gap-2 flex-wrap">
+          <div><h2 id="tituloLogsAbas" class="h5 mb-1">Logs — Planilha, SR e Consolidado</h2><div class="small fw-normal text-muted">Visualizações, exportações, histórico, salvamentos, permissões e falhas. O período selecionado acima também se aplica aqui.</div></div>
+          <button id="atualizarLogsAbas" type="button" class="btn btn-sm btn-outline-success">Atualizar logs</button>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 mb-3">
+            <div class="col-6 col-xl-3"><div class="rotulo text-muted small">Eventos destas abas</div><strong class="h3" id="kpiEventosAbas">—</strong></div>
+            <div class="col-6 col-xl-3"><div class="rotulo text-muted small">Visualizações</div><strong class="h3" id="kpiVisualizacoesAbas">—</strong></div>
+            <div class="col-6 col-xl-3"><div class="rotulo text-muted small">Exportações</div><strong class="h3" id="kpiExportacoesAbas">—</strong></div>
+            <div class="col-6 col-xl-3"><div class="rotulo text-muted small">Salvamentos</div><strong class="h3" id="kpiSalvamentosAbas">—</strong></div>
+          </div>
+          <div class="row g-2 mb-3 align-items-end">
+            <div class="col-12 col-sm-6 col-lg-3"><label for="filtroLogsAba" class="form-label small">Aba</label><select id="filtroLogsAba" class="form-select form-select-sm"><option value="">Todas</option><option value="planilha">Planilha</option><option value="sr">SR</option><option value="consolidado">Consolidado</option></select></div>
+            <div class="col-12 col-sm-6 col-lg-3"><label for="filtroLogsAcao" class="form-label small">Ação</label><select id="filtroLogsAcao" class="form-select form-select-sm"><option value="">Todas</option><option value="acesso">Visualização</option><option value="exportacao">Exportação Excel</option><option value="exportacao_original">Exportação original</option><option value="historico">Consulta de histórico</option><option value="recarregamento">Recarregamento</option><option value="salvamento">Salvamento</option><option value="permissao">Alteração de permissão</option><option value="erro">Falha</option><option value="acesso_bloqueado">Acesso bloqueado</option></select></div>
+            <div class="col-12 col-sm-9 col-lg-4"><label for="filtroLogsUsuario" class="form-label small">Usuário responsável</label><select id="filtroLogsUsuario" class="form-select form-select-sm"><option value="">Todos</option></select></div>
+            <div class="col-12 col-sm-3 col-lg-2"><label for="tamanhoLogsAbas" class="form-label small">Eventos por página</label><select id="tamanhoLogsAbas" class="form-select form-select-sm"><option value="5">5</option><option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option></select></div>
+          </div>
+          <div id="mensagemLogsAbas" role="status" class="alert alert-info py-2 mb-3">Carregando registros...</div>
+          <div class="table-responsive"><table class="table table-striped table-hover table-sm mb-0"><thead><tr><th>Data e hora</th><th>Usuário</th><th>Perfil</th><th>Aba</th><th>Ação</th><th>SR / Referência</th><th>Quantidade</th><th>Detalhes</th></tr></thead><tbody id="tbodyLogsAbas"></tbody></table></div>
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mt-3"><small id="logsAbasFaixa" class="text-muted">0 eventos</small><div class="d-flex align-items-center gap-2"><button id="logsAbasAnterior" class="btn btn-sm btn-outline-secondary" type="button">Anterior</button><span id="logsAbasPagina" class="small">Página 1</span><button id="logsAbasProxima" class="btn btn-sm btn-outline-secondary" type="button">Próxima</button></div></div>
+          <p class="small text-muted mb-0 mt-3">Os registros começam após a instalação desta versão. Eventos da tela podem ficar ausentes se a rede impedir seu envio; salvamentos confirmados e alterações de permissão são gravados na mesma transação dos dados.</p>
+        </div>
+      </section>
+
       <div class="row g-3 mb-3">
         <div class="col-6 col-xl-3"><div class="card analytics-kpi"><div class="card-body"><div class="rotulo">Acessos ao portal</div><div class="valor" id="kpiAcessosPortal">-</div><div class="small text-muted" id="kpiAcessosLegenda">visualizações</div></div></div></div>
         <div class="col-6 col-xl-3"><div class="card analytics-kpi"><div class="card-body"><div class="rotulo">Usuários ativos</div><div class="valor" id="kpiUsuariosUnicos">-</div><div class="small text-muted">usuários únicos no período</div></div></div></div>
@@ -56,6 +81,7 @@
     </div>
   </main>
 </div>
+<script src="js/logs-abas-analitico.js?v=20261008-v10-abas"></script>
 <script src="js/admin-analitico.js?v=20260718-1"></script>
 </body>
 </html>

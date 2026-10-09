@@ -59,6 +59,8 @@
 .sr-merge-grid .sr-merge-list-cell:nth-child(8) { width: 190px; min-width: 190px; }
 .sr-merge-grid .sr-merge-list-cell:first-child { min-width: 175px; }
 .sr-merge-grid .sr-merge-unmatched { padding: 8px; color: #737b76; text-align: center; }
+.sr-merge-grid .sr-cell-new { background: #fffdf1; }
+.sr-cell-new input::placeholder, .sr-cell-new textarea::placeholder { color: #887740; font-size: .75rem; }
 .sr-merge-missing { display: block; font-size: .68rem; font-weight: 400; color: #745700; margin-top: 5px; white-space: normal; }
 .sr-merged .sr-sheet-scroll { max-height: 60vh; }
 .sr-merged .sr-grid input, .sr-merged .sr-grid textarea { min-height: 60px; }

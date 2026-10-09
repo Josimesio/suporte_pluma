@@ -5,6 +5,28 @@
   const $ = id => document.getElementById(id);
   const text = value => String(value ?? "");
   let source, rows = [], drafts = {}, page = 1, editor = false;
+  const newRows = new Map();
+  const srKey = value => text(value).trim().replace(/\s+/g, "").toUpperCase();
+  const allRows = () => [...rows, ...[...newRows.values()].filter(row => Object.hasOwn(drafts, row.id))];
+  const findRow = id => rows.find(row => row.id === id) || newRows.get(id);
+  function canCreate(year) {
+    const profile = window.perfilAtual?.();
+    return editor && cloudReady && window.usuarioPodeEditarPlanilhas?.() &&
+      (window.usuarioPodeVisualizarAba?.("consolidado") || window.usuarioPodeVisualizarAba?.("sr")) &&
+      (profile?.perfil === "administrador" || profile?.permissoes?.[`chamados_${Number(year)}`] === true);
+  }
+  function prepareNew(call, year) {
+    if (!source || !canCreate(year)) return null;
+    const sr = srKey(call["Número SR"]), id = `portal:${Number(year)}:${sr}`;
+    if (!sr || ![2025, 2026].includes(Number(year))) return null;
+    const existing = rows.find(row => srKey(row.values[2]) === sr);
+    if (existing) return existing;
+    if (!newRows.has(id)) {
+      const values = Array(25).fill(null); values[2] = sr;
+      newRows.set(id, { id, values, isNew: true, year: Number(year), sourceRevision: source.revision, agingFormula: false });
+    }
+    return newRows.get(id);
+  }
   let loading, storageKey, lastSaved = "", cloudReady = false, busy = false, legacy = {};
   let historyRow, historyPage = 0, historyTicket = 0;
   const formatDate = value => value ? new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "";
@@ -35,7 +57,7 @@
   function filtered() {
     const query = $("srWorkbookSearch").value.trim().toLocaleLowerCase("pt-BR");
     const product = $("srWorkbookProduct").value, status = $("srWorkbookSubstatus").value;
-    return rows.filter(row => (!product || text(cell(row, 8)) === product) && (!status || text(cell(row, 4)) === status) &&
+    return allRows().filter(row => (!product || text(cell(row, 8)) === product) && (!status || text(cell(row, 4)) === status) &&
       (!query || source.headers.some((_, i) => display(row, i).toLocaleLowerCase("pt-BR").includes(query))));
   }
   function controls() {
@@ -73,7 +95,8 @@
     const input = document.createElement(longFields.has(i) ? "textarea" : "input");
     if (input.tagName === "INPUT") input.type = "text";
     input.value = display(row, i); input.dataset.column = i; input.dataset.rowId = row.id;
-    input.readOnly = !editor || !cloudReady || busy || (i === 9 && row.agingFormula);
+    input.readOnly = !editor || !cloudReady || busy || (row.isNew && !canCreate(row.year)) || (i === 9 && row.agingFormula);
+    if (row.isNew) { input.placeholder = "Preencher"; td.classList.add("sr-cell-new"); }
     input.setAttribute("aria-label", `${source.headers[i]}, SR ${text(row.values[2]).trim()}, linha ${row.id}`);
     if ([4, 5, 8, 11, 14, 15, 16, 21, 24].includes(i)) input.setAttribute("list", `srWorkbookOptions-${i}`);
     if (i === 9) { td.classList.add("sr-numeric"); input.title = row.agingFormula ? "Dias desde Creation Date, calculados automaticamente." : "Aging informado na planilha."; }
@@ -100,7 +123,7 @@
       const tr = document.createElement("tr"), td = document.createElement("td");
       td.colSpan = columns.length; td.className = "sr-empty"; td.textContent = "Nenhuma SR encontrada."; tr.append(td); body.append(tr);
     }
-    $("srWorkbookCount").textContent = `${list.length} de ${rows.length} registros`;
+    $("srWorkbookCount").textContent = `${list.length} de ${allRows().length} registros`;
     $("srWorkbookRange").textContent = list.length ? `${start + 1}–${Math.min(start + size, list.length)} de ${list.length}` : "0 registros";
     $("srWorkbookPageLabel").textContent = `Página ${page} de ${pages}`;
     $("srWorkbookPrev").disabled = page === 1; $("srWorkbookNext").disabled = page === pages;
@@ -156,6 +179,14 @@
             agingFormula: record.aging_calculado, updatedAt: record.atualizado_em,
             savedName: record.atualizado_nome, savedEmail: record.atualizado_email };
         });
+        const originalIds = new Set(data.rows.map(row => row.id));
+        for (const record of records.filter(record => !originalIds.has(record.linha_origem))) {
+          if (!Array.isArray(record.valores) || record.valores.length !== 25) throw new Error("Registro com estrutura inválida no banco.");
+          loadedRows.push({ id: record.linha_origem, values: [...record.valores], dbId: record.id, version: record.versao,
+            agingFormula: record.aging_calculado, updatedAt: record.atualizado_em,
+            savedName: record.atualizado_nome, savedEmail: record.atualizado_email });
+        }
+        for (const row of loadedRows) newRows.delete(row.id);
         rows = loadedRows; cloudReady = true; editor = !!window.usuarioPodeEditarPlanilhas?.();
         lastSaved = rows.map(row => row.updatedAt).sort().at(-1) || "";
         $("srWorkbookSync").textContent = lastSaved ? `SR no Supabase • última alteração: ${formatDate(lastSaved)}` : "SR no Supabase";
@@ -188,12 +219,15 @@
     const pending = Object.entries(drafts), failures = [];
     let savedCount = 0;
     for (let i = 0; i < pending.length; i++) {
-      const [id, changes] = pending[i], row = rows.find(row => row.id === id);
+      const [id, changes] = pending[i], row = findRow(id);
       message(`Salvando SR ${i + 1} de ${pending.length} e registrando a versão...`);
       try {
-        const result = await window.PlumaSRBanco.salvar(row, changes, aba);
+        const result = row?.isNew ? await window.PlumaSRBanco.criar(row, changes, aba) :
+          await window.PlumaSRBanco.salvar(row, changes, aba);
         row.values = [...result.valores]; row.version = result.versao; row.updatedAt = result.atualizado_em;
         row.savedName = result.atualizado_nome; row.savedEmail = result.atualizado_email;
+        row.dbId = result.id;
+        if (row.isNew) { row.isNew = false; rows.push(row); newRows.delete(id); }
         delete drafts[id]; lastSaved = result.atualizado_em; savedCount++;
       } catch (error) { failures.push(`SR ${text(row?.values[2]).trim()}, linha ${id}: ${error.message}`); void window.PlumaAbas.registrar(aba, "erro", { referencia: text(row?.values[2]).trim(), detalhes: { tipo: "salvamento" } }); }
     }
@@ -224,8 +258,9 @@
   function editCell(event) {
     const input = event.target, i = Number(input.dataset.column), id = input.dataset.rowId;
     if (!editor || !cloudReady || busy || !id || i === 2) return;
-    const row = rows.find(row => row.id === id);
+    const row = findRow(id);
     if (!row || (i === 9 && row.agingFormula)) return;
+    if (row.isNew && !canCreate(row.year)) return;
     const fields = drafts[id] || {};
     if (input.value === display({ ...row, id: "original" }, i)) delete fields[i]; else fields[i] = input.value;
     if (Object.keys(fields).length) drafts[id] = fields; else delete drafts[id];
@@ -288,7 +323,7 @@
       if (ticket !== historyTicket) return;
       for (const version of list) {
         const card = document.createElement("article"); card.className = "sr-version-card";
-        const title = document.createElement("h3"); title.textContent = `Versão ${version.versao} • ${version.acao === "carga_inicial" ? "Carga inicial" : "Edição"}`;
+        const title = document.createElement("h3"); title.textContent = `Versão ${version.versao} • ${version.acao === "carga_inicial" ? "Carga inicial" : version.versao === 1 ? "Cadastro" : "Edição"}`;
         const author = version.usuario_nome || version.usuario_email || "Carga inicial via SQL";
         const meta = document.createElement("p"); meta.textContent = `Salvo em ${formatDate(version.alterado_em)} (Brasília) • Salvo por: ${author}${version.usuario_nome && version.usuario_email ? ` (${version.usuario_email})` : ""}`;
         card.append(title, meta);
@@ -340,7 +375,7 @@
   function discard() {
     if (busy) return;
     if (countDrafts() && confirm("Descartar as alterações da SR que ainda não foram salvas?")) {
-      drafts = {}; render(); message("Alterações pendentes descartadas.");
+      drafts = {}; newRows.clear(); render(); message("Alterações pendentes descartadas.");
       window.dispatchEvent(new CustomEvent("pluma:sr-alterada", { detail: { action: "discard" } }));
     }
   }
@@ -351,9 +386,10 @@
   });
   window.PlumaSRWorkbook = {
     async abrir() { await load(); if (source) { options(); render(); } },
-    snapshot() { return source ? { headers: source.headers, rows, columns, editor, pending: countDrafts(), linhasPendentes: Object.keys(drafts), savedAt: lastSaved, busy, cloudReady } : null; },
+    snapshot() { return source ? { headers: source.headers, rows: allRows(), columns, editor, pending: countDrafts(), linhasPendentes: Object.keys(drafts), savedAt: lastSaved, busy, cloudReady } : null; },
     valor: cell, texto: display, criarCelula: createCell, editar: editCell,
-    salvar: save, descartar: discard, recarregar: () => load(true), ferramentasVersao: versionTools, historicoChamado: showCallHistory
+    salvar: save, descartar: discard, recarregar: () => load(true), ferramentasVersao: versionTools, historicoChamado: showCallHistory,
+    prepararNovo: prepareNew
   };
   $("srWorkbookOriginal").addEventListener("click", async event => {
     event.preventDefault();

@@ -79,7 +79,8 @@
     const state = base(), query = state.busca.trim().toLocaleLowerCase("pt-BR");
     const joined = state.filtrados.flatMap(call => {
       const matches = index.get(key(call["Número SR"])) || [];
-      return matches.length ? matches.map(sheet => ({ call, sheet })) : [{ call, sheet: null }];
+      return matches.length ? matches.map(sheet => ({ call, sheet })) :
+        [{ call, sheet: window.PlumaSRWorkbook.prepararNovo(call, year) }];
     });
     entries = joined.filter(entry => !query || Array.from({ length: 32 }, (_, i) => value(entry, i).toLocaleLowerCase("pt-BR")).some(v => v.includes(query)));
     if (sort.column >= 0) entries.sort((a, b) => value(a, sort.column).localeCompare(value(b, sort.column), "pt-BR", { numeric: true, sensitivity: "base" }) * sort.direction);
@@ -91,8 +92,9 @@
       if (entry.sheet) tr.dataset.rowId = entry.sheet.id;
       listColumns.forEach((label, column) => {
         const td = document.createElement("td"); td.className = "sr-merge-list-cell"; td.textContent = value(entry, column);
-        if (column === 0 && !entry.sheet) {
-          const badge = document.createElement("small"); badge.className = "sr-merge-missing"; badge.textContent = "Sem registro na planilha"; td.append(badge);
+        if (column === 0 && (!entry.sheet || entry.sheet.isNew)) {
+          const badge = document.createElement("small"); badge.className = "sr-merge-missing";
+          badge.textContent = entry.sheet?.isNew ? "Novo registro — preencha e salve" : "Sem registro na planilha"; td.append(badge);
         }
         if (column === 0 && entry.sheet) window.PlumaSRWorkbook.ferramentasVersao(entry.sheet, td);
         tr.append(td);
@@ -110,7 +112,7 @@
     }
     const distinct = [...new Set(entries.map(entry => entry.call))];
     $("srMergedCount").textContent = `${distinct.length} de ${state.todos.length} chamados • ${entries.length} linhas`;
-    const matches = distinct.filter(call => index.has(key(call["Número SR"])));
+    const matches = distinct.filter(call => index.get(key(call["Número SR"]))?.some(row => !row.isNew));
     const allKeys = new Set(state.todos.map(call => key(call["Número SR"])));
     const outside = workbook.rows.filter(row => !allKeys.has(key(row.values[2]))).length;
     $("srMergedMatches").textContent = `${matches.length} com correspondência • ${distinct.length - matches.length} sem registro na planilha`;
@@ -140,7 +142,7 @@
     if (!window.PlumaSRWorkbook.snapshot()) { message("Não foi possível carregar a planilha SR. Abra a aba SR para consultar a falha e tentar novamente.", "danger"); return; }
     $("srMergedHomeFilters").hidden = !multi;
     $("srMergedHelp").textContent = window.PlumaSRWorkbook.snapshot().editor ?
-      "Os campos da lista aparecem à esquerda; os da planilha SR, à direita. Salve no Supabase para compartilhar as alterações e registrar uma versão. Consulte o histórico pelo número da SR." :
+      "Preencha também os campos das SRs sem registro na planilha. Salvar cria o registro com autor e versão; as próximas alterações ficam no mesmo histórico. Consulte o histórico pelo número da SR." :
       "Consulta dos chamados e da planilha SR na mesma linha. Somente Administrador e Gestor podem editar e salvar.";
     if (multi) {
       const profile = window.perfilAtual?.();
@@ -165,7 +167,7 @@
       const headers = [...dataHeaders, "Versão SR", "Salvo por (SR)", "Salvo em (SR)", "Versão chamado", "Salvo por (chamado)", "Salvo em (chamado)"];
       const date = value => value ? new Date(value) : "";
       const matrix = entries.map(entry => [...dataHeaders.map((_, i) => value(entry, i)),
-        entry.sheet?.version || "", entry.sheet?.savedName || entry.sheet?.savedEmail || (entry.sheet ? (entry.sheet.version > 1 ? "Autor não registrado" : "Carga inicial") : ""), date(entry.sheet?.updatedAt),
+        entry.sheet?.version || "", entry.sheet?.isNew ? "Ainda não salvo" : entry.sheet?.savedName || entry.sheet?.savedEmail || (entry.sheet ? (entry.sheet.version > 1 ? "Autor não registrado" : "Carga inicial") : ""), date(entry.sheet?.updatedAt),
         entry.call.portal_versao ? Number(entry.call.portal_versao) : "", entry.call.portal_atualizado_nome || entry.call.portal_atualizado_email || (Number(entry.call.portal_versao) > 1 ? "Autor não registrado" : "Base inicial"), date(entry.call.portal_atualizado_em)]);
       const filterValue = id => {
         const el = $(id); if (!el) return "Todos";

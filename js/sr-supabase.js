@@ -4,11 +4,32 @@
   const fields = "id,origem_revisao,linha_origem,numero_sr,valores,aging_calculado,versao,atualizado_em,atualizado_por,atualizado_nome,atualizado_email";
   function errorMessage(error) {
     if (["42P01", "42703", "PGRST204", "PGRST205", "PGRST202"].includes(error.code)) {
-      return "Confira a instalação v10 no Supabase: execute sql/ATUALIZAR_ABAS_LOGS_V10.sql para atualizar a SR já instalada, ou sql/INSTALAR_SR_VERSIONADA.sql para instalação nova.";
+      return "Confira a instalação v11 no Supabase: execute sql/ATUALIZAR_CADASTRO_SR_V11.sql para atualizar a SR já instalada, ou sql/INSTALAR_SR_VERSIONADA.sql para instalação nova.";
     }
     return error.message || "Não foi possível acessar a SR no Supabase.";
   }
   window.PlumaSRBanco = {
+    async criar(row, changes, aba = "consolidado") {
+      const profile = window.perfilAtual?.();
+      if (!window.usuarioPodeEditarPlanilhas?.() || !window.usuarioPodeVisualizarAba?.(aba) ||
+          (profile?.perfil !== "administrador" && profile?.permissoes?.[`chamados_${row.year}`] !== true)) {
+        throw new Error("Somente Administrador e Gestor autorizados podem cadastrar esta SR.");
+      }
+      if (!row.isNew || row.dbId || !row.sourceRevision || ![2025, 2026].includes(row.year)) {
+        throw new Error("Rascunho de cadastro inválido.");
+      }
+      const supabase = await client();
+      const { data, error } = await supabase.rpc("criar_sr_planilha_com_log", {
+        p_origem_revisao: row.sourceRevision, p_numero_sr: row.values[2], p_ano: row.year, p_alteracoes: changes, p_aba: aba
+      });
+      if (error) throw new Error(errorMessage(error));
+      const result = Array.isArray(data) ? data[0] : data;
+      if (!result?.id || result.linha_origem !== row.id || result.numero_sr !== row.values[2] ||
+          result.versao !== 1 || !Array.isArray(result.valores) || result.valores.length !== 25) {
+        throw new Error("O banco não confirmou o cadastro. Recarregue a SR antes de tentar novamente.");
+      }
+      return result;
+    },
     async carregar(revision) {
       const supabase = await client(), rows = [], size = 1000;
       for (let start = 0; ; start += size) {

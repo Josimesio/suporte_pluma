@@ -33,7 +33,9 @@
     if (d.versao) partes.push(`Versão ${d.versao}`);
     if (Array.isArray(d.campos)) partes.push(`${d.campos.length} campo(s) alterado(s)`);
     if (Number(d.pendentes)) partes.push(`${d.pendentes} linha(s) pendente(s) incluída(s)`);
-    if (d.tipo) partes.push(d.tipo);
+    if (d.tipo) partes.push(({ importacao_planilha: "Importação da planilha", coluna_linha: "Histórico da célula", comentarios_consolidado: "Comentários do Consolidado" })[d.tipo] || d.tipo);
+    if (d.arquivo) partes.push(d.arquivo);
+    if (d.celulas != null) partes.push(`${d.celulas} célula(s)`);
     if (d.motivo) partes.push(d.motivo);
     return partes.join(" • ") || "—";
   }

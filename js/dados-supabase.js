@@ -43,7 +43,7 @@
     for (let inicio = 0; ; inicio += tamanhoPagina) {
       const { data, error } = await supabase
         .from("chamados_oracle")
-        .select("ano,numero_sr,resumo,issue_type,servico,status,severidade,criado_texto,atualizado_texto,fechado_texto,contato_primario,grupo_usuario,tenancy,impacto_negocio,conta,referencia_cliente,criado_por,atualizado_por,url_recurso,gerado_em_texto,dados_originais,portal_versao,portal_atualizado_em,portal_atualizado_por,portal_atualizado_nome,portal_atualizado_email")
+        .select("ano,numero_sr,resumo,issue_type,servico,status,severidade,criado_texto,atualizado_texto,fechado_texto,contato_primario,grupo_usuario,tenancy,impacto_negocio,conta,referencia_cliente,criado_por,atualizado_por,url_recurso,gerado_em_texto,dados_originais,versoes_celulas,portal_versao,portal_atualizado_em,portal_atualizado_por,portal_atualizado_nome,portal_atualizado_email")
         .eq("ano", ano)
         .order("numero_sr")
         .range(inicio, inicio + tamanhoPagina - 1);
@@ -96,11 +96,12 @@
       let consulta = supabase.from("chamados_oracle").update(valores)
         .eq("ano", Number(ano)).eq("numero_sr", numeroSr);
       if (!Number.isInteger(original.portal_versao)) throw new Error("Execute sql/ATUALIZAR_ABAS_LOGS_V10.sql antes de salvar a planilha.");
-      consulta = consulta.eq("portal_versao", original.portal_versao);
-      // Evita sobrescrever o mesmo campo alterado por outra pessoa após a leitura.
+
+      // Confere somente as versões das colunas que estão sendo alteradas.
+      const esperadas = window.PlumaCelulas.esperadas(original.versoes_celulas, campos);
       for (const campo of campos) {
-        consulta = original[campo] == null
-          ? consulta.is(campo, null) : consulta.eq(campo, original[campo]);
+        const path = `versoes_celulas->${campo}->>versao`;
+        consulta = esperadas[campo] === 0 ? consulta.is(path, null) : consulta.eq(path, String(esperadas[campo]));
       }
       const { data, error } = await consulta.select();
       if (error) throw new Error(error.message || "Não foi possível salvar o chamado.");
@@ -149,6 +150,7 @@
       "Updated By": item.atualizado_por || "",
       "Resource Url": item.url_recurso || "",
       "Gerado em": item.gerado_em_texto || item.atualizado_texto || "",
+      portal_versoes_celulas: JSON.stringify(item.versoes_celulas || {}),
       portal_versao: item.portal_versao || "",
       portal_atualizado_em: item.portal_atualizado_em || "",
       portal_atualizado_nome: item.portal_atualizado_nome || "",

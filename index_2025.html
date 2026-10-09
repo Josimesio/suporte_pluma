@@ -5,7 +5,7 @@
   <script src="js/traducao.js?v=20261008-v10-abas"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js?v=20261008-v10-abas"></script>
-  <script src="js/dados-supabase.js?v=20261008-v10-abas"></script>
+  <script src="js/dados-supabase.js?v=20261009-v13-celulas"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Chamados 2025 - ORACLE</title>
@@ -68,7 +68,7 @@
     }
   </style>
 
-  <link rel="stylesheet" href="css/painel-planilha.css?v=20261009-v11-cadastro">
+  <link rel="stylesheet" href="css/painel-planilha.css?v=20261009-v13-celulas">
 </head>
 
 <body>
@@ -327,7 +327,7 @@
 <div><label for="srWorkbookPageSize">Linhas por página</label><select id="srWorkbookPageSize" class="form-select form-select-sm"><option>5</option><option>10</option><option selected>20</option><option>50</option><option>100</option><option value="all">Todas</option></select></div>
             <div class="sr-sheet-actions">
               <a id="srWorkbookOriginal" href="dados/Srs_Oracle.xlsx" download class="btn btn-sm btn-outline-secondary">Arquivo original</a>
-              <button id="srWorkbookReload" type="button" class="btn btn-sm btn-outline-secondary">Recarregar SR</button>
+              <button id="srWorkbookReload" type="button" class="btn btn-sm btn-outline-secondary">Recarregar consolidado</button>
               <button id="srWorkbookLegacy" type="button" class="btn btn-sm btn-outline-warning" hidden>Trazer edições deste navegador</button>
               <button id="srWorkbookDiscard" type="button" class="btn btn-sm btn-outline-secondary" disabled>Descartar alterações</button>
               <button id="srWorkbookExport" type="button" class="btn btn-sm btn-outline-success" disabled>Baixar Excel da SR</button>
@@ -365,10 +365,13 @@
           <div class="sr-sheet-toolbar">
             <div><label for="srMergedPageSize">Linhas por página</label><select id="srMergedPageSize" class="form-select form-select-sm"><option>5</option><option>10</option><option selected>20</option><option>50</option><option>100</option><option value="all">Todas</option></select></div>
             <div class="sr-sheet-actions">
-              <button id="srMergedReload" type="button" class="btn btn-sm btn-outline-secondary">Recarregar SR</button>
-              <button id="srMergedDiscard" type="button" class="btn btn-sm btn-outline-secondary" disabled>Descartar alterações da SR</button>
+              <button id="srMergedReload" type="button" class="btn btn-sm btn-outline-secondary">Recarregar consolidado</button>
+              <button id="srMergedDiscard" type="button" class="btn btn-sm btn-outline-secondary" disabled>Descartar alterações</button>
               <button id="srMergedExport" type="button" class="btn btn-sm btn-outline-success" disabled>Exportar consolidado para Excel</button>
-              <button id="srMergedSave" type="button" class="btn btn-sm btn-success" disabled>Salvar SR no Supabase</button>
+              <button id="srMergedSave" type="button" class="btn btn-sm btn-success" disabled>Salvar consolidado</button>
+              <button id="srMergedTemplate" type="button" class="btn btn-sm btn-outline-success" hidden>Baixar modelo semanal</button>
+              <button id="srMergedImport" type="button" class="btn btn-sm btn-outline-primary" hidden>Importar atualização semanal</button>
+              <input id="srMergedImportFile" type="file" accept=".xlsx" hidden>
             </div>
           </div>
           <div class="sr-sheet-meta"><span id="srMergedCount">Carregando...</span><span id="srMergedMatches"></span><span id="srMergedPending">Nenhuma alteração pendente</span><span id="srMergedSync"></span></div>
@@ -530,10 +533,13 @@
 <script src="js/vendor/jszip.min.js?v=20261007-1"></script>
 <script src="js/exportar-chamados-excel.js?v=20261008-v10-abas"></script>
   <script src="js/logs-abas.js?v=20261008-v10-abas"></script>
-  <script src="js/sr-supabase.js?v=20261009-v11-cadastro"></script>
-  <script src="js/planilha-sr.js?v=20261009-v11-cadastro"></script>
-  <script src="js/consolidado-sr.js?v=20261009-v11-cadastro"></script>
-  <script src="js/painel-planilha.js?v=20261008-v10-abas"></script>
+  <script src="js/sr-supabase.js?v=20261009-v13-celulas"></script>
+  <script src="js/versoes-celulas.js?v=20261009-v13-celulas"></script>
+  <script src="js/planilha-sr.js?v=20261009-v13-celulas"></script>
+  <script src="js/comentarios-consolidado.js?v=20261009-v13-celulas"></script>
+  <script src="js/consolidado-sr.js?v=20261009-v13-celulas"></script>
+  <script src="js/importacao-semanal-sr.js?v=20261009-v13-celulas"></script>
+  <script src="js/painel-planilha.js?v=20261009-v13-celulas"></script>
 
 </body>
 </html>

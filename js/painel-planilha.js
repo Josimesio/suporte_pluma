@@ -55,16 +55,6 @@
         const td = document.createElement("td");
         if (key === "numero_sr") {
           td.textContent = row.numero_sr;
-          const tools = document.createElement("span"); tools.className = "sr-version-tools";
-          const version = document.createElement("small"); version.textContent = `v${row.portal_versao || 1}`;
-          const history = document.createElement("button"); history.type = "button"; history.className = "sr-history-button";
-          history.textContent = "Histórico"; history.disabled = ocupado;
-          history.setAttribute("aria-label", `Histórico do chamado ${row.numero_sr}, ${ano}`);
-          history.addEventListener("click", () => window.PlumaSRWorkbook.historicoChamado(row, campos));
-          const author = document.createElement("small"); author.className = "sr-save-author";
-          author.textContent = `Salvo por: ${row.portal_atualizado_nome || row.portal_atualizado_email || (Number(row.portal_versao) > 1 ? "Autor não registrado" : "Base inicial")}`;
-          author.title = row.portal_atualizado_em ? `Salvo em ${new Date(row.portal_atualizado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} (Brasília)` : "";
-          tools.append(version, history); td.append(tools, author);
         } else {
           const input = document.createElement(["resumo", "impacto_negocio"].includes(key) ? "textarea" : "input");
           if (input.tagName === "INPUT") input.type = "text";
@@ -78,6 +68,7 @@
           td.classList.toggle("sr-cell-changed", Object.hasOwn(change, key));
           td.append(input);
         }
+        window.PlumaCelulas.anexar(td, { fonte: "chamado", linha: `${ano}:${window.PlumaCelulas.numero(row.numero_sr)}`, coluna: key, label, numero_sr: row.numero_sr, ano, aba: "planilha" }, row.versoes_celulas);
         tr.append(td);
       }
       body.append(tr);

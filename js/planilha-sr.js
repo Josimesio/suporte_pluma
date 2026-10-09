@@ -89,7 +89,7 @@
     if (i === 2) {
       td.textContent = text(row.values[i]).trim();
       td.title = `Linha ${row.id} da aba SRs`;
-      versionTools(row, td);
+      window.PlumaCelulas.anexar(td, { fonte: "sr", linha: row.dbId, linhaLabel: row.id, coluna: "2", label: source.headers[2], numero_sr: text(row.values[2]).trim(), aba: window.PlumaAbas.atual() === "consolidado" ? "consolidado" : "sr" }, row.cellVersions);
       return td;
     }
     const input = document.createElement(longFields.has(i) ? "textarea" : "input");
@@ -102,6 +102,7 @@
     if (i === 9) { td.classList.add("sr-numeric"); input.title = row.agingFormula ? "Dias desde Creation Date, calculados automaticamente." : "Aging informado na planilha."; }
     td.classList.toggle("sr-cell-changed", Object.hasOwn(drafts[row.id] || {}, i));
     td.append(input);
+    window.PlumaCelulas.anexar(td, { fonte: "sr", linha: row.dbId, linhaLabel: row.id, coluna: String(i), label: source.headers[i], numero_sr: text(row.values[2]).trim(), aba: window.PlumaAbas.atual() === "consolidado" ? "consolidado" : "sr" }, row.cellVersions);
     return td;
   }
   function render() {
@@ -177,14 +178,14 @@
           if (!Array.isArray(record.valores) || record.valores.length !== 25) throw new Error("Registro com estrutura inválida no banco.");
           return { ...row, values: [...record.valores], dbId: record.id, version: record.versao,
             agingFormula: record.aging_calculado, updatedAt: record.atualizado_em,
-            savedName: record.atualizado_nome, savedEmail: record.atualizado_email };
+            savedName: record.atualizado_nome, savedEmail: record.atualizado_email, cellVersions: record.versoes_celulas };
         });
         const originalIds = new Set(data.rows.map(row => row.id));
         for (const record of records.filter(record => !originalIds.has(record.linha_origem))) {
           if (!Array.isArray(record.valores) || record.valores.length !== 25) throw new Error("Registro com estrutura inválida no banco.");
           loadedRows.push({ id: record.linha_origem, values: [...record.valores], dbId: record.id, version: record.versao,
             agingFormula: record.aging_calculado, updatedAt: record.atualizado_em,
-            savedName: record.atualizado_nome, savedEmail: record.atualizado_email });
+            savedName: record.atualizado_nome, savedEmail: record.atualizado_email, cellVersions: record.versoes_celulas });
         }
         for (const row of loadedRows) newRows.delete(row.id);
         rows = loadedRows; cloudReady = true; editor = !!window.usuarioPodeEditarPlanilhas?.();
@@ -226,6 +227,7 @@
           await window.PlumaSRBanco.salvar(row, changes, aba);
         row.values = [...result.valores]; row.version = result.versao; row.updatedAt = result.atualizado_em;
         row.savedName = result.atualizado_nome; row.savedEmail = result.atualizado_email;
+        row.cellVersions = result.versoes_celulas;
         row.dbId = result.id;
         if (row.isNew) { row.isNew = false; rows.push(row); newRows.delete(id); }
         delete drafts[id]; lastSaved = result.atualizado_em; savedCount++;
@@ -311,15 +313,33 @@
     if (!$("srVersionDialog").open) $("srVersionDialog").showModal();
     await loadHistory();
   }
+  async function showCommentHistory(ano, numero_sr) {
+    if (!await window.PlumaAbas.permitir("consolidado", ano)) return;
+    void window.PlumaAbas.registrar("consolidado", "historico", { ano, referencia: numero_sr, detalhes: { tipo: "comentarios_consolidado" } });
+    historyRow = { kind: "comentarios", ano, numero_sr, fields: window.PlumaComentariosConsolidado.fields };
+    historyPage = 0;
+    $("srVersionTitle").textContent = `Histórico dos comentários • SR ${numero_sr} • ${ano}`;
+    if (!$("srVersionDialog").open) $("srVersionDialog").showModal();
+    await loadHistory();
+  }
   async function loadHistory() {
     const ticket = ++historyTicket;
     $("srVersionStatus").textContent = "Carregando versões...";
     $("srVersionBody").replaceChildren(); $("srVersionPrev").disabled = true; $("srVersionNext").disabled = true;
     try {
-      const isCall = historyRow.kind === "chamado";
-      const list = isCall ? await window.PlumaDadosOracle.historico(historyRow.ano, historyRow.numero_sr, historyPage * 20) :
+      if (historyRow.kind === "celula") {
+        const list = await window.PlumaCelulas.historico(historyRow, historyPage * 20);
+        if (ticket !== historyTicket) return;
+        window.PlumaCelulas.renderizarHistorico(list, $("srVersionBody"));
+        $("srVersionStatus").textContent = `Página ${historyPage + 1} • ${list.length} versão(ões) desta coluna nesta linha. Origem e arquivo identificam as cargas da planilha.`;
+        $("srVersionPrev").disabled = historyPage === 0; $("srVersionNext").disabled = list.length < 20;
+        return;
+      }
+      const isComment = historyRow.kind === "comentarios", isCall = historyRow.kind === "chamado", isObject = isCall || isComment;
+      const list = isComment ? await window.PlumaComentariosConsolidado.historico(historyRow.ano, historyRow.numero_sr, historyPage * 20) :
+        isCall ? await window.PlumaDadosOracle.historico(historyRow.ano, historyRow.numero_sr, historyPage * 20) :
         await window.PlumaSRBanco.historico(historyRow.dbId, historyPage * 20);
-      const fieldLabel = change => isCall ? historyRow.fields.find(([key]) => key === change.campo)?.[1] || change.campo : source.headers[change.coluna];
+      const fieldLabel = change => isObject ? historyRow.fields.find(([key]) => key === change.campo)?.[1] || change.campo : source.headers[change.coluna];
       if (ticket !== historyTicket) return;
       for (const version of list) {
         const card = document.createElement("article"); card.className = "sr-version-card";
@@ -355,14 +375,14 @@
         }
         const detail = document.createElement("details"), summary = document.createElement("summary"); summary.textContent = "Ver todos os dados desta versão";
         const table = document.createElement("table"); table.className = "sr-version-diff";
-        const snapshot = isCall ? Object.entries(version.depois || {}) : (version.valores || []).map((value, index) => [index, value]);
+        const snapshot = isObject ? Object.entries(version.depois || {}) : (version.valores || []).map((value, index) => [index, value]);
         snapshot.forEach(([key, value]) => {
-          const tr = table.insertRow(), th = document.createElement("th"); th.textContent = isCall ? historyRow.fields.find(([field]) => field === key)?.[1] || key : source.headers[key]; th.scope = "row"; tr.append(th);
+          const tr = table.insertRow(), th = document.createElement("th"); th.textContent = isObject ? historyRow.fields.find(([field]) => field === key)?.[1] || key : source.headers[key]; th.scope = "row"; tr.append(th);
           const td = tr.insertCell(); td.textContent = typeof value === "object" && value !== null ? JSON.stringify(value) : text(value); td.dataset.srVersionValue = "";
         });
         detail.append(summary, table); card.append(detail); $("srVersionBody").append(card);
       }
-      $("srVersionStatus").textContent = list.length ? `Página ${historyPage + 1} • ${list.length} versão(ões). Datas em Brasília; Antes indica quando o valor anterior daquele campo foi registrado.${isCall ? "" : " Aging mostra o valor armazenado."}` : "Nenhuma versão nesta página.";
+      $("srVersionStatus").textContent = list.length ? `Página ${historyPage + 1} • ${list.length} versão(ões). Datas em Brasília; Antes indica quando o valor anterior daquele campo foi registrado.${isObject ? "" : " Aging mostra o valor armazenado."}` : "Nenhuma versão nesta página.";
       $("srVersionPrev").disabled = historyPage === 0; $("srVersionNext").disabled = list.length < 20;
     } catch (error) {
       if (ticket === historyTicket) { $("srVersionStatus").textContent = `Não foi possível consultar as versões: ${error.message}`; $("srVersionPrev").disabled = historyPage === 0; }
@@ -372,9 +392,9 @@
   $("srVersionDialog").addEventListener("cancel", () => historyTicket++);
   $("srVersionPrev").addEventListener("click", () => { historyPage--; loadHistory(); });
   $("srVersionNext").addEventListener("click", () => { historyPage++; loadHistory(); });
-  function discard() {
+  function discard(confirmed = false) {
     if (busy) return;
-    if (countDrafts() && confirm("Descartar as alterações da SR que ainda não foram salvas?")) {
+    if (countDrafts() && (confirmed === true || confirm("Descartar as alterações da SR que ainda não foram salvas?"))) {
       drafts = {}; newRows.clear(); render(); message("Alterações pendentes descartadas.");
       window.dispatchEvent(new CustomEvent("pluma:sr-alterada", { detail: { action: "discard" } }));
     }
@@ -386,10 +406,19 @@
   });
   window.PlumaSRWorkbook = {
     async abrir() { await load(); if (source) { options(); render(); } },
-    snapshot() { return source ? { headers: source.headers, rows: allRows(), columns, editor, pending: countDrafts(), linhasPendentes: Object.keys(drafts), savedAt: lastSaved, busy, cloudReady } : null; },
+    snapshot() { return source ? { revision: source.revision, headers: source.headers, rows: allRows(), columns, editor, pending: countDrafts(), linhasPendentes: Object.keys(drafts), savedAt: lastSaved, busy, cloudReady } : null; },
     valor: cell, texto: display, criarCelula: createCell, editar: editCell,
     salvar: save, descartar: discard, recarregar: () => load(true), ferramentasVersao: versionTools, historicoChamado: showCallHistory,
     prepararNovo: prepareNew
+  };
+  window.PlumaSRWorkbook.historicoComentarios = showCommentHistory;
+  window.PlumaSRWorkbook.historicoCelula = async context => {
+    if (!await window.PlumaAbas.permitir(context.aba || "consolidado", context.ano)) return;
+    historyRow = { ...context, kind: "celula" }; historyPage = 0;
+    $("srVersionTitle").textContent = `${context.label} × SR ${context.numero_sr} • linha ${context.linhaLabel || context.linha}${context.ano ? ` • ${context.ano}` : ""}`;
+    if (!$("srVersionDialog").open) $("srVersionDialog").showModal();
+    void window.PlumaAbas.registrar(context.aba || "consolidado", "historico", { ano: context.ano, referencia: context.numero_sr, detalhes: { tipo: "coluna_linha", coluna: String(context.coluna), linha: context.linha } });
+    await loadHistory();
   };
   $("srWorkbookOriginal").addEventListener("click", async event => {
     event.preventDefault();

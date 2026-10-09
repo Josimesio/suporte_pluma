@@ -1,10 +1,10 @@
 (function () {
   "use strict";
   async function client() { await window.plumaAuthPronto; return window.obterClienteSupabase(); }
-  const fields = "id,origem_revisao,linha_origem,numero_sr,valores,aging_calculado,versao,atualizado_em,atualizado_por,atualizado_nome,atualizado_email";
+  const fields = "id,origem_revisao,linha_origem,numero_sr,valores,aging_calculado,versao,versoes_celulas,atualizado_em,atualizado_por,atualizado_nome,atualizado_email";
   function errorMessage(error) {
     if (["42P01", "42703", "PGRST204", "PGRST205", "PGRST202"].includes(error.code)) {
-      return "Confira a instalação v11 no Supabase: execute sql/ATUALIZAR_CADASTRO_SR_V11.sql para atualizar a SR já instalada, ou sql/INSTALAR_SR_VERSIONADA.sql para instalação nova.";
+      return "Confira a instalação V13 no Supabase: execute TODO o arquivo sql/ATUALIZAR_CELULAS_IMPORTACAO_V13.sql após a V12.";
     }
     return error.message || "Não foi possível acessar a SR no Supabase.";
   }
@@ -44,8 +44,8 @@
       if (!window.usuarioPodeEditarPlanilhas?.()) throw new Error("Somente Administrador e Gestor podem editar e salvar a SR.");
       if (!row.dbId || !Number.isInteger(row.version)) throw new Error("Registro sem identificação ou versão do banco.");
       const supabase = await client();
-      const { data, error } = await supabase.rpc("salvar_sr_planilha_com_log", {
-        p_registro_id: row.dbId, p_versao_atual: row.version, p_alteracoes: changes, p_aba: aba
+      const { data, error } = await supabase.rpc("salvar_sr_celulas", {
+        p_registro_id: row.dbId, p_versoes: window.PlumaCelulas.esperadas(row.cellVersions, Object.keys(changes)), p_alteracoes: changes, p_aba: aba
       });
       if (error) throw new Error(errorMessage(error));
       const result = Array.isArray(data) ? data[0] : data;

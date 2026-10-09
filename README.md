@@ -1,4 +1,26 @@
-# SUPORTE ORACLE — Cadastro de SRs sem registro (v11)
+# SUPORTE ORACLE — Versões por coluna × linha e carga semanal (V13)
+
+O Consolidado registra versões independentes por célula, inclusive em
+**Comentários PMO** e **Comentários Pluma**. Cada alteração identifica a origem
+**Planilha** ou **Painel**, além de autor, data e valores anterior e novo.
+
+Para atualizar a V12, execute todo o arquivo
+`sql/ATUALIZAR_CELULAS_IMPORTACAO_V13.sql` no SQL Editor do Supabase do portal,
+publique os arquivos deste pacote e atualize a página com Ctrl+F5.
+Se ainda não instalou a V12, execute primeiro
+`sql/ATUALIZAR_COMENTARIOS_CONSOLIDADO_V12.sql` sobre a instalação V10/V11.
+
+Na aba Consolidado, **Baixar modelo semanal** gera um Excel com IDs fixos de
+linha. Depois de editar os campos SR, use **Importar atualização semanal**,
+revise a prévia por célula e confirme. Valores que não mudaram na planilha
+preservam edições manuais; comentários permanecem no painel. Repetir os mesmos
+valores não cria versões novas. A carga considera os chamados da lista do ano.
+
+Consulte **ATUALIZAR_V13.txt** para instalação, arquivos alterados e fluxo completo.
+Validado localmente com PostgreSQL e com o Excel real de 245 linhas. O SQL
+ainda precisa ser aplicado ao projeto real.
+
+## Cadastro de SRs sem registro (V11)
 
 No Consolidado, as células antes marcadas com traços nos chamados sem registro
 na planilha agora permitem preencher os 24 campos da SR. O número da SR identifica

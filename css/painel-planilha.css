@@ -60,6 +60,10 @@
 .sr-merge-grid .sr-merge-list-cell:first-child { min-width: 175px; }
 .sr-merge-grid .sr-merge-unmatched { padding: 8px; color: #737b76; text-align: center; }
 .sr-merge-grid .sr-cell-new { background: #fffdf1; }
+.sr-merge-grid thead .sr-merge-comments-group { background: #355c7d; border-left: 3px solid #b3d7f1; }
+.sr-merge-grid .sr-comment-boundary { border-left: 3px solid #b3d7f1; }
+.sr-comment-cell { vertical-align: top; }
+.sr-comment-cell .sr-version-tools, .sr-comment-cell .sr-save-author { margin: 4px 8px 8px; }
 .sr-cell-new input::placeholder, .sr-cell-new textarea::placeholder { color: #887740; font-size: .75rem; }
 .sr-merge-missing { display: block; font-size: .68rem; font-weight: 400; color: #745700; margin-top: 5px; white-space: normal; }
 .sr-merged .sr-sheet-scroll { max-height: 60vh; }
@@ -94,3 +98,8 @@
   .sr-version-changes td::before { content:attr(data-label); display:block; font-weight:600; color:#486074; margin-bottom:.25rem; }
   .sr-version-changes tr + tr { margin-top:.65rem; }
 }
+
+.sr-cell-version { padding: 3px 8px 8px; flex-wrap: wrap; white-space: normal; }
+.sr-cell-version small:nth-child(2) { background: #eef1f5; color: #486074; font-weight: 400; }
+.sr-import-scroll { overflow: auto; max-height: 50vh; margin-bottom: 12px; }
+.sr-import-scroll td { overflow-wrap: anywhere; white-space: pre-wrap; }

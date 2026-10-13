@@ -378,11 +378,16 @@
   });
 
   const modalSolicitacao = document.getElementById("modalSolicitacao");
+  const mensagemEmailCorporativo = "A solicitação deve ser feita com um e-mail @plumaagro.com.br ou @ninecon.com.br.";
+
+  function emailCorporativoPermitido(email) {
+    return /^[^\s@]+@(plumaagro\.com\.br|ninecon\.com\.br)$/i.test(String(email || "").trim());
+  }
 
   function mensagemSituacaoEmail(situacao) {
     if (situacao === "cadastrado") return "Este e-mail já possui cadastro no portal. Use Entrar ou Esqueci minha senha.";
     if (situacao === "pendente") return "Já existe uma solicitação de acesso pendente para este e-mail. Aguarde a análise do administrador.";
-    if (situacao === "invalido") return "A solicitação deve ser feita com um e-mail @plumaagro.com.br.";
+    if (situacao === "invalido") return mensagemEmailCorporativo;
     return "";
   }
 
@@ -403,8 +408,8 @@
       return;
     }
 
-    if (!emailInformado.endsWith("@plumaagro.com.br")) {
-      erro.innerText = "A solicitação deve ser feita com um e-mail @plumaagro.com.br.";
+    if (!emailCorporativoPermitido(emailInformado)) {
+      erro.innerText = mensagemEmailCorporativo;
       document.getElementById("user").focus();
       return;
     }
@@ -450,6 +455,12 @@
     const declaracao = document.getElementById("declaracaoSolicitacao").checked;
     const mensagem = document.getElementById("erroSolicitacao");
     const botao = document.getElementById("btnEnviarSolicitacao");
+
+    if (!emailCorporativoPermitido(email)) {
+      mensagem.style.color = "red";
+      mensagem.innerText = mensagemEmailCorporativo;
+      return;
+    }
 
     if (!setor || !gestor || !cargo || !motivo || !prazoTipo || !declaracao) {
       mensagem.style.color = "red";

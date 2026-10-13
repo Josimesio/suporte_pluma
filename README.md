@@ -1,4 +1,58 @@
-# SUPORTE ORACLE — Versões por coluna × linha e carga semanal (V13)
+# SUPORTE ORACLE — Acrescentar novidades na mesma célula (V17)
+
+A importação semanal mantém o conteúdo atual do site e acrescenta as novidades
+abaixo, na mesma célula. A prévia mostra o conteúdo atual, o valor recebido e o
+resultado completo antes da confirmação.
+
+Para atualizar a V16, execute **todo** o arquivo
+`sql/ATUALIZAR_IMPORTACAO_ACRESCENTAR_V17.sql` no SQL Editor do Supabase do portal,
+publique os arquivos deste pacote e pressione **Ctrl+F5**.
+Se ainda não aplicou a V16, execute primeiro `sql/REMOVER_LOGS_ABAS_V16.sql`.
+
+Exemplo de conteúdo que já está no site:
+
+```text
+Aguardando retorno da Oracle.
+```
+
+Após receber uma novidade na planilha, a mesma célula passa a conter:
+
+```text
+Aguardando retorno da Oracle.
+Correção disponibilizada para teste.
+```
+
+Valores vazios não apagam o conteúdo. A mesma planilha repetida não duplica texto
+nem cria versões nas células que permanecerem iguais. Se o modelo semanal já
+contiver o texto anterior, a importação acrescenta apenas as novidades.
+Mudanças sucessivas permanecem na ordem em que forem importadas.
+
+O número da SR continua fixo, e Aging calculado continua automático. Filtros de
+Product e Substatus consideram o último valor apresentado na célula. Comentários
+PMO e Pluma continuam exclusivos do painel. As versões por coluna × linha
+mantêm autor, data, arquivo e origem **Planilha** ou **Painel**. Histórico é visível
+somente ao administrador; Administrador/Gestor autorizados mantêm a edição.
+
+Os logs gerais removidos na V16 continuam desativados.
+Consulte `ATUALIZAR_ACRESCENTAR_V17.txt` para aplicação e conferência.
+
+## Atualizações anteriores
+
+### Logs das abas removidos (V16)
+
+O bloco de logs foi removido do Analítico e as telas não enviam mais eventos
+de Planilha, SR e Consolidado ao banco.
+
+Para concluir a atualização, execute `sql/REMOVER_LOGS_ABAS_V16.sql` no
+SQL Editor do Supabase do portal e publique os arquivos deste pacote.
+O SQL apaga a tabela de logs e seus índices, inclusive os registros existentes.
+Mantenha este SQL como a última atualização caso reaplique versões anteriores.
+
+Históricos de versões, autoria, permissões, importação semanal, exportação Excel,
+indicadores de acessos ao portal e solicitações de analítico são mantidos.
+Consulte `ATUALIZAR_SEM_LOGS_V16.txt`.
+
+## Versões por coluna × linha e carga semanal (V13)
 
 O Consolidado registra versões independentes por célula, inclusive em
 **Comentários PMO** e **Comentários Pluma**. Cada alteração identifica a origem
@@ -33,8 +87,8 @@ Para a primeira instalação da SR, use `sql/INSTALAR_SR_VERSIONADA.sql`.
 Depois publique os arquivos deste pacote e atualize o navegador com Ctrl+F5.
 
 O botão **Salvar SR no Supabase** cria apenas as linhas preenchidas. O banco
-atribui nome/e-mail e data; registra a versão 1, os campos preenchidos e um log no
-Analítico na mesma transação. As edições seguintes usam o histórico e a conferência
+atribui nome/e-mail e data; registra a versão 1 e os campos preenchidos
+na mesma transação. As edições seguintes usam o histórico e a conferência
 de versão existentes. Cadastros simultâneos preservam o registro salvo e mantêm o
 rascunho sem confirmação para revisão.
 
@@ -46,9 +100,8 @@ Em **Usuários cadastrados → Configurar → Permissões do usuário**, o Admin
 escolhe se cada usuário visualiza **Planilha**, **SR** e **Consolidado**.
 Somente Administrador e Gestor autorizados podem editar e salvar.
 
-Em **ADMIN → Analítico**, os logs mostram usuários, abas, ações, horários,
-exportações, salvamentos e alterações de visualização. Salvamentos e configurações
-são registrados pelo banco na mesma transação dos dados.
+Em **ADMIN → Analítico**, os indicadores de acesso e atendimento continuam
+disponíveis. O bloco de logs das abas foi removido na V16.
 
 Os dados, versões, painel no cabeçalho e Excel com **CHAMADOS ORACLE** e logo da
 Pluma são preservados. Na primeira atualização, usuários existentes mantêm as

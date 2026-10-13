@@ -18,7 +18,7 @@
   }
   function creationDay(value) {
     if (value instanceof Date) return brasiliaDay(value);
-    const text = String(value ?? "").trim();
+    const text = String(value ?? "").split(/\r?\n/).map(line => line.trim()).filter(Boolean).at(-1) || "";
     if (!text) return null;
     const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[ T])/);
     if (iso) {

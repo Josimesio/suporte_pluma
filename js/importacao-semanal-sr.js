@@ -73,7 +73,7 @@
   function setBusy(value) { busy = value; window.dispatchEvent(new CustomEvent("pluma:importacao-estado")); }
   function status(value) { $("srImportStatus").textContent = value; }
   const dialog = document.createElement("dialog"); dialog.id = "srImportDialog"; dialog.className = "sr-version-dialog";
-  dialog.innerHTML = '<div class="sr-version-dialog-head"><h2>Prévia da carga semanal</h2><button id="srImportClose" type="button" class="btn btn-sm btn-outline-secondary">Fechar</button></div><p id="srImportFile"></p><p id="srImportStatus" role="status" aria-live="polite"></p><p class="small">Somente mudanças em relação à última planilha são aplicadas. Células sem mudança na planilha mantêm as edições do painel. Comentários PMO e Pluma são preservados. Aging calculado continua automático.</p><div class="sr-import-scroll"><table class="sr-version-diff"><thead><tr><th>SR / linha</th><th>Coluna</th><th>Atual no painel</th><th>Valor da planilha</th></tr></thead><tbody id="srImportBody"></tbody></table></div><div class="sr-sheet-pages"><button id="srImportPrev" type="button" class="btn btn-sm btn-outline-secondary">Anterior</button><span id="srImportPage"></span><button id="srImportNext" type="button" class="btn btn-sm btn-outline-secondary">Próxima</button><button id="srImportApply" type="button" class="btn btn-sm btn-success">Confirmar carga</button></div>';
+  dialog.innerHTML = '<div class="sr-version-dialog-head"><h2>Prévia da carga semanal</h2><button id="srImportClose" type="button" class="btn btn-sm btn-outline-secondary">Fechar</button></div><p id="srImportFile"></p><p id="srImportStatus" role="status" aria-live="polite"></p><p class="small">O conteúdo atual é preservado. As novidades da planilha são acrescentadas abaixo, na mesma célula. Valores vazios não apagam o conteúdo e a mesma carga não repete o texto. Comentários PMO e Pluma são preservados. SR Number permanece fixo e Aging calculado continua automático.</p><div class="sr-import-scroll"><table class="sr-version-diff"><thead><tr><th>SR / linha</th><th>Coluna</th><th>Atual no site</th><th>Conteúdo recebido</th><th>Como ficará na célula</th></tr></thead><tbody id="srImportBody"></tbody></table></div><div class="sr-sheet-pages"><button id="srImportPrev" type="button" class="btn btn-sm btn-outline-secondary">Anterior</button><span id="srImportPage"></span><button id="srImportNext" type="button" class="btn btn-sm btn-outline-secondary">Próxima</button><button id="srImportApply" type="button" class="btn btn-sm btn-success">Confirmar carga</button></div>';
   document.body.append(dialog);
   function renderPreview() {
     const body = $("srImportBody"); body.replaceChildren();
@@ -81,7 +81,7 @@
     const headers = window.PlumaSRWorkbook.snapshot().headers;
     for (const change of changes.slice(page * 100, page * 100 + 100)) {
       const tr = body.insertRow();
-      for (const value of [`${change.numero_sr}\n${change.id}`, headers[change.coluna], change.anterior ?? "(vazio)", change.novo ?? "(vazio)"]) tr.insertCell().textContent = String(value);
+      for (const value of [`${change.numero_sr}\n${change.id}`, headers[change.coluna], change.anterior ?? "(vazio)", change.recebido ?? "(vazio)", change.novo ?? "(vazio)"]) tr.insertCell().textContent = String(value);
     }
     $("srImportPage").textContent = `Página ${page + 1} de ${pages} • ${changes.length} célula(s)`;
     $("srImportPrev").disabled = page === 0; $("srImportNext").disabled = page === pages - 1;
@@ -118,12 +118,13 @@
       const { data, error } = await sb.rpc("prever_importacao_sr", { p_revisao: source.revision, p_ano: year, p_linhas: rows });
       if (error) throw new Error(error.message);
       if (jobId !== job || !dialog.open) return;
+      if (data?.modo !== "acrescentar_v17") throw new Error("Execute sql/ATUALIZAR_IMPORTACAO_ACRESCENTAR_V17.sql no Supabase para preservar o conteúdo atual antes de importar");
       fileHash = hash; preview = data; changes = preview.linhas.flatMap(row => row.alteracoes.map(change => ({ ...change, numero_sr: row.numero_sr, id: row.id })));
-      status(`${preview.celulas} célula(s) a carregar • ${preview.novas} linha(s) nova(s) • ${preview.ignoradas} linha(s) fora da lista do ano, preservadas.`);
+      status(`${preview.celulas} célula(s) com novidades • ${preview.novas} linha(s) nova(s) • ${preview.ignoradas} linha(s) fora da lista do ano, preservadas.`);
       renderPreview();
     } catch (error) {
       if (jobId !== job) return;
-      const message = `Não foi possível preparar a carga: ${error.message}. Confira também a instalação V13 no Supabase.`;
+      const message = `Não foi possível preparar a carga: ${error.message}. Confira a instalação V17 no Supabase.`;
       if (dialog.open) status(message); else window.PlumaConsolidado.aviso(message, "danger");
       $("srImportApply").disabled = true;
     } finally { if (jobId === job && !dialog.open) setBusy(false); }
@@ -131,13 +132,13 @@
   $("srImportApply").addEventListener("click", async () => {
     if (!preview) return;
     $("srImportApply").disabled = true; $("srImportClose").disabled = true;
-    status("Importando em uma única transação e registrando a origem de cada célula...");
+    status("Acrescentando novidades abaixo do conteúdo atual e registrando as versões...");
     try {
       await check(); const sb = await window.obterClienteSupabase();
       const { data, error } = await sb.rpc("importar_atualizacao_sr", { p_previa: preview, p_arquivo: fileName, p_hash: fileHash });
       if (error) throw new Error(error.message);
       dialog.close(); setBusy(false); preview = undefined;
-      window.PlumaConsolidado.aviso(`Carga de ${fileName} concluída: ${data.celulas} célula(s) alterada(s), ${data.novas} linha(s) nova(s). Histórico por coluna × linha registrado como Planilha.`, "success");
+      window.PlumaConsolidado.aviso(`Carga de ${fileName} concluída: novidades acrescentadas em ${data.celulas} célula(s), ${data.novas} linha(s) nova(s). Conteúdo anterior preservado e histórico por coluna × linha registrado como Planilha.`, "success");
       try { await window.PlumaSRWorkbook.recarregar(); }
       catch (error) { window.PlumaConsolidado.aviso(`Carga de ${fileName} confirmada no banco. Não foi possível atualizar a tela: ${error.message}. Recarregue a página.`, "warning"); }
     } catch (error) { status(`A carga não foi confirmada: ${error.message}. Feche e selecione o arquivo novamente para refazer a prévia.`); }
@@ -155,7 +156,7 @@
       const rows = state.rows.filter(row => row.dbId && calls.has(window.PlumaCelulas.numero(row.values[2])));
       const headers = [...state.headers, "ID linha SR"];
       const values = rows.map(row => [...state.headers.map((_, i) => window.PlumaSRWorkbook.valor(row, i)), row.dbId]);
-      const summary = [["Ano", year], ["Como atualizar", "Edite a aba SRs. Preserve ID linha SR e SR Number. Depois use Importar atualização semanal."], ["Linhas repetidas", "O ID fixo mantém o histórico de cada linha, mesmo se a ordem mudar."], ["Comentários PMO/Pluma", "Permanecem no painel e não são importados."]];
+      const summary = [["Ano", year], ["Como atualizar", "Edite a aba SRs. Preserve ID linha SR e SR Number. Acrescente as novidades abaixo do texto atual. Depois use Importar atualização semanal."], ["Importação", "As novidades são acrescentadas na mesma célula, preservando o conteúdo do site. Valores vazios não apagam o conteúdo e a mesma carga não repete o texto."], ["Linhas repetidas", "O ID fixo mantém o histórico de cada linha, mesmo se a ordem mudar."], ["Comentários PMO/Pluma", "Permanecem no painel e não são importados."]];
       const blob = await window.PlumaExportacaoExcel.gerarExcel(headers, values, summary, "SRs");
       const link = document.createElement("a"), url = URL.createObjectURL(blob); link.href = url; link.download = `Modelo_semanal_SR_${year}.xlsx`; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (error) { window.PlumaConsolidado.aviso(error.message, "danger"); }

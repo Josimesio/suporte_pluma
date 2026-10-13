@@ -26,6 +26,7 @@
 .sr-grid td:first-child { position: sticky; left: 0; z-index: 1; padding: 8px 10px; min-width: 150px; font-weight: 600; background: #edf3ef; }
 .sr-grid input, .sr-grid textarea { display: block; border: 0; border-radius: 0; background: transparent; color: #202824; width: 215px; min-height: 40px; padding: 8px; font: inherit; resize: vertical; }
 .sr-grid textarea { width: 340px; height: 60px; }
+.sr-grid .sr-cell-multiline textarea { height: auto; min-height: 76px; white-space: pre-wrap; }
 .sr-grid input:focus, .sr-grid textarea:focus { outline: 2px solid #006e51; outline-offset: -2px; background: #fff; }
 .sr-grid .sr-cell-changed { background: #fff1be !important; }
 .sr-grid input:read-only, .sr-grid textarea:read-only { color: #59645e; }
@@ -103,3 +104,4 @@
 .sr-cell-version small:nth-child(2) { background: #eef1f5; color: #486074; font-weight: 400; }
 .sr-import-scroll { overflow: auto; max-height: 50vh; margin-bottom: 12px; }
 .sr-import-scroll td { overflow-wrap: anywhere; white-space: pre-wrap; }
+.sr-import-scroll .sr-version-diff { min-width: 850px; }

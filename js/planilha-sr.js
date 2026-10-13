@@ -4,6 +4,7 @@
   if (!section) return;
   const $ = id => document.getElementById(id);
   const text = value => String(value ?? "");
+  const latest = value => text(value).split(/\r?\n/).map(line => line.trim()).filter(Boolean).at(-1) || "";
   let source, rows = [], drafts = {}, page = 1, editor = false;
   const newRows = new Map();
   const srKey = value => text(value).trim().replace(/\s+/g, "").toUpperCase();
@@ -44,7 +45,7 @@
     const changes = drafts[row.id] || {};
     const value = Object.hasOwn(changes, index) ? changes[index] : row.values[index];
     if (index !== 9 || !row.agingFormula) return value;
-    const match = text(cell(row, 1)).match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?$/);
+    const match = latest(cell(row, 1)).match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?$/);
     if (!match) return null;
     const parts = new Intl.DateTimeFormat("en", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
     const today = Object.fromEntries(parts.map(part => [part.type, part.value]));
@@ -57,7 +58,7 @@
   function filtered() {
     const query = $("srWorkbookSearch").value.trim().toLocaleLowerCase("pt-BR");
     const product = $("srWorkbookProduct").value, status = $("srWorkbookSubstatus").value;
-    return allRows().filter(row => (!product || text(cell(row, 8)) === product) && (!status || text(cell(row, 4)) === status) &&
+    return allRows().filter(row => (!product || latest(cell(row, 8)) === product) && (!status || latest(cell(row, 4)) === status) &&
       (!query || source.headers.some((_, i) => display(row, i).toLocaleLowerCase("pt-BR").includes(query))));
   }
   function controls() {
@@ -88,14 +89,19 @@
     const td = document.createElement("td");
     if (i === 2) {
       td.textContent = text(row.values[i]).trim();
-      window.PlumaNovosChamados.anexar(td, cell(row, 1));
+      window.PlumaNovosChamados.anexar(td, latest(cell(row, 1)));
       td.title = `Linha ${row.id} da aba SRs`;
       window.PlumaCelulas.anexar(td, { fonte: "sr", linha: row.dbId, linhaLabel: row.id, coluna: "2", label: source.headers[2], numero_sr: text(row.values[2]).trim(), aba: window.PlumaAbas.atual() === "consolidado" ? "consolidado" : "sr" }, row.cellVersions);
       return td;
     }
-    const input = document.createElement(longFields.has(i) ? "textarea" : "input");
+    const value = display(row, i), multiline = /[\r\n]/.test(value);
+    const input = document.createElement(longFields.has(i) || multiline ? "textarea" : "input");
     if (input.tagName === "INPUT") input.type = "text";
-    input.value = display(row, i); input.dataset.column = i; input.dataset.rowId = row.id;
+    input.value = value; input.dataset.column = i; input.dataset.rowId = row.id;
+    if (multiline) {
+      td.classList.add("sr-cell-multiline");
+      input.rows = Math.min(8, Math.max(3, value.split(/\r?\n/).length));
+    }
     input.readOnly = !editor || !cloudReady || busy || (row.isNew && !canCreate(row.year)) || (i === 9 && row.agingFormula);
     if (row.isNew) { input.placeholder = "Preencher"; td.classList.add("sr-cell-new"); }
     input.setAttribute("aria-label", `${source.headers[i]}, SR ${text(row.values[2]).trim()}, linha ${row.id}`);
@@ -136,13 +142,13 @@
     for (const [index, id] of targets) {
       const select = $(id), previous = select.value;
       select.replaceChildren(new Option("Todos", ""));
-      const values = [...new Set(rows.map(row => text(cell(row, index))).filter(Boolean))].sort();
+      const values = [...new Set(rows.map(row => latest(cell(row, index))).filter(Boolean))].sort();
       for (const value of values) select.add(new Option(value, value));
       select.value = values.includes(previous) ? previous : "";
     }
     for (const index of [4, 5, 8, 11, 14, 15, 16, 21, 24]) {
       const list = $(`srWorkbookOptions-${index}`); list.replaceChildren();
-      for (const value of [...new Set(rows.map(row => text(cell(row, index))).filter(Boolean))].sort()) {
+      for (const value of [...new Set(rows.map(row => latest(cell(row, index))).filter(Boolean))].sort()) {
         const option = document.createElement("option"); option.value = value; list.append(option);
       }
     }

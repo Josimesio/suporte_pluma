@@ -3,12 +3,13 @@
   const labels = { planilha: "Planilha", painel: "Painel", legado: "Histórico anterior", banco: "Atualização no banco" };
   const normalize = value => String(value ?? "").trim().replace(/\s+/g, "").toUpperCase();
   const date = value => value ? new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "Data não registrada";
+  const canView = () => window.usuarioEhAdminAcessos?.() === true;
   function map(value) {
     if (typeof value === "string") { try { return JSON.parse(value) || {}; } catch { return {}; } }
     return value || {};
   }
   function attach(td, context, versions) {
-    if (!context.linha) return;
+    if (!canView() || !context.linha) return;
     const info = map(versions)[context.coluna] || {}, tools = document.createElement("span");
     tools.className = "sr-version-tools sr-cell-version";
     const badge = document.createElement("small"); badge.textContent = `v${info.versao || 0}`;
@@ -23,9 +24,9 @@
   window.PlumaCelulas = {
     map, anexar: attach, numero: normalize,
     esperadas(versions, fields) { const source = map(versions); return Object.fromEntries(fields.map(field => [String(field), Number(source[field]?.versao || 0)])); },
-    resumo(versions, headers) { return Object.entries(map(versions)).map(([field, info]) => `${headers?.[field] || field}: v${info.versao} — ${labels[info.origem] || info.origem} — ${info.usuario_nome || info.usuario_email || "Autor não registrado"} — ${date(info.alterado_em)}${info.arquivo ? ` — ${info.arquivo}` : ""}`).join("; "); },
+    resumo(versions, headers) { return canView() ? Object.entries(map(versions)).map(([field, info]) => `${headers?.[field] || field}: v${info.versao} — ${labels[info.origem] || info.origem} — ${info.usuario_nome || info.usuario_email || "Autor não registrado"} — ${date(info.alterado_em)}${info.arquivo ? ` — ${info.arquivo}` : ""}`).join("; ") : ""; },
     async historico(context, offset = 0) {
-      if (!await window.PlumaAbas.permitir(context.aba || "consolidado", context.ano)) throw new Error("Histórico não autorizado.");
+      if (!await window.PlumaAbas.permitir(context.aba || "consolidado", context.ano) || !canView()) throw new Error("Somente o administrador pode consultar o histórico.");
       const sb = await window.obterClienteSupabase();
       const { data, error } = await sb.from("consolidado_celulas_versoes").select("*")
         .eq("fonte", context.fonte).eq("linha", context.linha).eq("coluna", String(context.coluna))
@@ -34,6 +35,7 @@
       return data || [];
     },
     renderizarHistorico(list, body) {
+      if (!canView()) return;
       for (const version of list) {
         const card = document.createElement("article"); card.className = "sr-version-card";
         const title = document.createElement("h3"); title.textContent = `Versão ${version.versao} da célula • ${labels[version.origem] || version.origem}`;
@@ -49,4 +51,7 @@
       }
     }
   };
+  window.addEventListener("pluma:permissoes-abas", () => {
+    if (!canView()) document.querySelectorAll(".sr-version-tools").forEach(tools => tools.remove());
+  });
 })();

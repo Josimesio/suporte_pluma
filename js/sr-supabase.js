@@ -55,6 +55,8 @@
       return result;
     },
     async historico(id, offset = 0) {
+      await window.plumaAuthPronto;
+      if (!window.usuarioEhAdminAcessos?.()) throw new Error("Somente o administrador pode consultar o histórico.");
       const supabase = await client();
       const { data, error } = await supabase.from("sr_planilha_versoes")
         .select("id,registro_id,versao,valores,alteracoes,acao,usuario_id,usuario_nome,usuario_email,alterado_em")

@@ -71,7 +71,7 @@
     $("srWorkbookPending").classList.toggle("sr-sheet-pending", !!countDrafts());
   }
   function versionTools(row, container) {
-    if (!row?.dbId) return;
+    if (!window.usuarioEhAdminAcessos?.() || !row?.dbId) return;
     const tools = document.createElement("span"); tools.className = "sr-version-tools";
     const badge = document.createElement("small"); badge.textContent = `v${row.version}`;
     const button = document.createElement("button"); button.type = "button"; button.className = "sr-history-button";
@@ -88,6 +88,7 @@
     const td = document.createElement("td");
     if (i === 2) {
       td.textContent = text(row.values[i]).trim();
+      window.PlumaNovosChamados.anexar(td, cell(row, 1));
       td.title = `Linha ${row.id} da aba SRs`;
       window.PlumaCelulas.anexar(td, { fonte: "sr", linha: row.dbId, linhaLabel: row.id, coluna: "2", label: source.headers[2], numero_sr: text(row.values[2]).trim(), aba: window.PlumaAbas.atual() === "consolidado" ? "consolidado" : "sr" }, row.cellVersions);
       return td;
@@ -297,7 +298,7 @@
   $("srWorkbookExport").addEventListener("click", exportExcel);
   async function showHistory(row) {
     const aba = window.PlumaAbas.atual() === "consolidado" ? "consolidado" : "sr";
-    if (!await window.PlumaAbas.permitir(aba)) return;
+    if (!await window.PlumaAbas.permitir(aba) || !window.usuarioEhAdminAcessos?.()) return;
     void window.PlumaAbas.registrar(aba, "historico", { referencia: text(row.values[2]).trim() });
     historyRow = row; historyPage = 0;
     $("srVersionTitle").textContent = `Histórico da SR ${text(row.values[2]).trim()} • linha ${row.id}`;
@@ -305,7 +306,7 @@
     await loadHistory();
   }
   async function showCallHistory(row, fields) {
-    if (!await window.PlumaAbas.permitir("planilha", row.ano)) return;
+    if (!await window.PlumaAbas.permitir("planilha", row.ano) || !window.usuarioEhAdminAcessos?.()) return;
     void window.PlumaAbas.registrar("planilha", "historico", { ano: row.ano, referencia: row.numero_sr });
     historyRow = { kind: "chamado", ano: row.ano, numero_sr: row.numero_sr, fields };
     historyPage = 0;
@@ -314,7 +315,7 @@
     await loadHistory();
   }
   async function showCommentHistory(ano, numero_sr) {
-    if (!await window.PlumaAbas.permitir("consolidado", ano)) return;
+    if (!await window.PlumaAbas.permitir("consolidado", ano) || !window.usuarioEhAdminAcessos?.()) return;
     void window.PlumaAbas.registrar("consolidado", "historico", { ano, referencia: numero_sr, detalhes: { tipo: "comentarios_consolidado" } });
     historyRow = { kind: "comentarios", ano, numero_sr, fields: window.PlumaComentariosConsolidado.fields };
     historyPage = 0;
@@ -323,13 +324,19 @@
     await loadHistory();
   }
   async function loadHistory() {
+    if (!window.usuarioEhAdminAcessos?.()) {
+      historyTicket++;
+      $("srVersionBody").replaceChildren();
+      if ($("srVersionDialog").open) $("srVersionDialog").close();
+      return;
+    }
     const ticket = ++historyTicket;
     $("srVersionStatus").textContent = "Carregando versões...";
     $("srVersionBody").replaceChildren(); $("srVersionPrev").disabled = true; $("srVersionNext").disabled = true;
     try {
       if (historyRow.kind === "celula") {
         const list = await window.PlumaCelulas.historico(historyRow, historyPage * 20);
-        if (ticket !== historyTicket) return;
+        if (ticket !== historyTicket || !window.usuarioEhAdminAcessos?.()) return;
         window.PlumaCelulas.renderizarHistorico(list, $("srVersionBody"));
         $("srVersionStatus").textContent = `Página ${historyPage + 1} • ${list.length} versão(ões) desta coluna nesta linha. Origem e arquivo identificam as cargas da planilha.`;
         $("srVersionPrev").disabled = historyPage === 0; $("srVersionNext").disabled = list.length < 20;
@@ -340,7 +347,7 @@
         isCall ? await window.PlumaDadosOracle.historico(historyRow.ano, historyRow.numero_sr, historyPage * 20) :
         await window.PlumaSRBanco.historico(historyRow.dbId, historyPage * 20);
       const fieldLabel = change => isObject ? historyRow.fields.find(([key]) => key === change.campo)?.[1] || change.campo : source.headers[change.coluna];
-      if (ticket !== historyTicket) return;
+      if (ticket !== historyTicket || !window.usuarioEhAdminAcessos?.()) return;
       for (const version of list) {
         const card = document.createElement("article"); card.className = "sr-version-card";
         const title = document.createElement("h3"); title.textContent = `Versão ${version.versao} • ${version.acao === "carga_inicial" ? "Carga inicial" : version.versao === 1 ? "Cadastro" : "Edição"}`;
@@ -413,7 +420,7 @@
   };
   window.PlumaSRWorkbook.historicoComentarios = showCommentHistory;
   window.PlumaSRWorkbook.historicoCelula = async context => {
-    if (!await window.PlumaAbas.permitir(context.aba || "consolidado", context.ano)) return;
+    if (!await window.PlumaAbas.permitir(context.aba || "consolidado", context.ano) || !window.usuarioEhAdminAcessos?.()) return;
     historyRow = { ...context, kind: "celula" }; historyPage = 0;
     $("srVersionTitle").textContent = `${context.label} × SR ${context.numero_sr} • linha ${context.linhaLabel || context.linha}${context.ano ? ` • ${context.ano}` : ""}`;
     if (!$("srVersionDialog").open) $("srVersionDialog").showModal();
@@ -428,6 +435,12 @@
     void window.PlumaAbas.registrar("sr", "exportacao_original");
   });
   window.addEventListener("pluma:permissoes-abas", () => {
+    if (!window.usuarioEhAdminAcessos?.()) {
+      historyTicket++;
+      $("srVersionBody").replaceChildren();
+      $("srVersionStatus").textContent = "";
+      if ($("srVersionDialog").open) $("srVersionDialog").close();
+    }
     editor = !!window.usuarioPodeEditarPlanilhas();
     if (!busy) render();
   });

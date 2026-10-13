@@ -1,0 +1,18 @@
+.sr-number-line {
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.sr-new-badge {
+  display: inline-block;
+  width: 3em;
+  height: 1.95em;
+  max-width: 46px;
+  max-height: 30px;
+  flex-shrink: 0;
+  object-fit: contain;
+  vertical-align: middle;
+  mix-blend-mode: multiply;
+}

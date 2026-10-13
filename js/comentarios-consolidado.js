@@ -103,7 +103,7 @@
     snapshot(year) { return { busy, ready: loaded.has(Number(year)), editor: canEdit(year), pending: drafts.size, pendentes: [...drafts.values()], error: errors.get(Number(year)) || "" }; },
     descartar() { if (!busy) { drafts.clear(); emit("discard"); } },
     async historico(year, sr, offset = 0) {
-      if (!await window.PlumaAbas.permitir("consolidado", year)) throw new Error("Histórico não autorizado.");
+      if (!await window.PlumaAbas.permitir("consolidado", year) || !window.usuarioEhAdminAcessos?.()) throw new Error("Somente o administrador pode consultar o histórico.");
       const sb = await client();
       const { data, error } = await sb.from("sr_consolidado_comentarios_versoes").select("*")
         .eq("ano", year).eq("numero_sr", key(sr)).order("versao", { ascending: false }).range(offset, offset + 19);

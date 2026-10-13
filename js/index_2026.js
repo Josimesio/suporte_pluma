@@ -405,6 +405,7 @@
       cols.forEach(c => {
         const td = document.createElement("td");
         td.textContent = ["Criado_dt", "Atualizado_dt"].includes(c) ? formatarDataTabela(d[c]) : (d[c] || "");
+        if (c === "Número SR") window.PlumaNovosChamados.anexar(td, d["Criado_dt"]);
         tr.appendChild(td);
       });
       tb.appendChild(tr);

@@ -105,6 +105,7 @@
       if (entry.sheet) tr.dataset.rowId = entry.sheet.id;
       listColumns.forEach((label, column) => {
         const td = document.createElement("td"); td.className = "sr-merge-list-cell"; td.textContent = value(entry, column);
+        if (column === 0) window.PlumaNovosChamados.anexar(td, entry.call["Criado_dt"] || entry.sheet?.values[1]);
         if (column === 0 && (!entry.sheet || entry.sheet.isNew)) {
           const badge = document.createElement("small"); badge.className = "sr-merge-missing";
           badge.textContent = entry.sheet?.isNew ? "Novo registro — preencha e salve" : "Sem registro na planilha"; td.append(badge);
@@ -186,11 +187,12 @@
       const dataHeaders = [...listColumns, ...sheetColumns.map(i => `${workbook.headers[i]} (SR)`), ...commentFields.map(([, label]) => label)];
       const pendingIds = new Set(window.PlumaSRWorkbook.snapshot().linhasPendentes);
       const pendingExport = new Set(entries.filter(entry => entry.sheet && pendingIds.has(entry.sheet.id)).map(entry => entry.sheet.id)).size;
-      const headers = [...dataHeaders, "ID linha SR", "Versões dos campos da lista", "Versões dos campos SR", "Versões dos comentários", "Rascunho incluído?"];
+      const showVersions = window.usuarioEhAdminAcessos?.() === true;
+      const headers = [...dataHeaders, "ID linha SR", ...(showVersions ? ["Versões dos campos da lista", "Versões dos campos SR", "Versões dos comentários"] : []), "Rascunho incluído?"];
       const commentDrafts = new Set(comments.snapshot(year).pendentes.filter(draft => draft.year === year).map(draft => draft.sr));
       const matrix = entries.map(entry => [...dataHeaders.map((_, i) => value(entry, i)),
-        entry.sheet?.dbId || "", window.PlumaCelulas.resumo(entry.call.versoes_celulas || entry.call.portal_versoes_celulas, Object.fromEntries(listFields.map((field, i) => [field, listColumns[i]]))),
-        window.PlumaCelulas.resumo(entry.sheet?.cellVersions, workbook.headers), window.PlumaCelulas.resumo(comments.registro(year, entry.call["Número SR"]).versoes_celulas, Object.fromEntries(commentFields)),
+        entry.sheet?.dbId || "", ...(showVersions ? [window.PlumaCelulas.resumo(entry.call.versoes_celulas || entry.call.portal_versoes_celulas, Object.fromEntries(listFields.map((field, i) => [field, listColumns[i]]))),
+        window.PlumaCelulas.resumo(entry.sheet?.cellVersions, workbook.headers), window.PlumaCelulas.resumo(comments.registro(year, entry.call["Número SR"]).versoes_celulas, Object.fromEntries(commentFields))] : []),
         pendingIds.has(entry.sheet?.id) || commentDrafts.has(key(entry.call["Número SR"])) ? "Sim" : "Não"]);
       const filterValue = id => {
         const el = $(id); if (!el) return "Todos";

@@ -55,6 +55,7 @@
         const td = document.createElement("td");
         if (key === "numero_sr") {
           td.textContent = row.numero_sr;
+          window.PlumaNovosChamados.anexar(td, row.criado_texto);
         } else {
           const input = document.createElement(["resumo", "impacto_negocio"].includes(key) ? "textarea" : "input");
           if (input.tagName === "INPUT") input.type = "text";

@@ -113,6 +113,7 @@
     },
     async historico(ano, numeroSr, offset = 0) {
       await aguardarAutenticacao();
+      if (!window.usuarioEhAdminAcessos?.()) throw new Error("Somente o administrador pode consultar o histórico.");
       const supabase = await window.obterClienteSupabase();
       const { data, error } = await supabase.from("chamados_oracle_versoes")
         .select("id,ano,numero_sr,versao,depois,alteracoes,acao,usuario_id,usuario_nome,usuario_email,alterado_em")

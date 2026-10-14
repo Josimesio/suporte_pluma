@@ -202,6 +202,7 @@
         ["Busca", base().busca], ["Serviço", multi ? $("srMergedService").value || "Todos" : filterValue("filtroServico")],
         ["Status", multi ? $("srMergedListStatus").value || "Todos" : filterValue("filtroStatus")],
         ["Severidade", multi ? $("srMergedSeverity").value || "Todos" : filterValue("filtroSeveridade")],
+        ["Contato primário", multi ? "Todos" : filterValue("filtroContatoPrimario")],
         ["Linhas exportadas", String(matrix.length)], ["Edições pendentes incluídas", String(pendingExport)],
         ["Comentários pendentes incluídos", String(new Set(entries.filter(entry => comments.snapshot(year).pendentes.some(draft => draft.year === year && draft.sr === key(entry.call["Número SR"])) ).map(entry => key(entry.call["Número SR"]))).size)],
         ["Comentários", comments.snapshot(year).ready ? "Complementos do Consolidado; não vêm da planilha SR" : "Indisponíveis: comentários salvos não puderam ser consultados"],

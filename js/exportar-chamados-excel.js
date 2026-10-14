@@ -195,6 +195,7 @@
         ["Serviço (Módulo)", valorFiltro("filtroServico", "Todos")],
         ["Status", valorFiltro("filtroStatus", "Todos")],
         ["Severidade", valorFiltro("filtroSeveridade", "Todas")],
+        ["Contato primário", valorFiltro("filtroContatoPrimario", "Todos")],
         ["Busca rápida", document.getElementById("buscaTabela")?.value.trim() || "Sem busca"],
         ["Quantidade de chamados", String(registros.length)],
         ["Dados atualizados em", document.getElementById("atualizadoEm")?.textContent.trim() || "Não informado"],

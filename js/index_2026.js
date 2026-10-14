@@ -302,22 +302,26 @@
   const FILTRO_SERVICO_CONFIG = { rotuloTodos: "Todos", dataTodosAttr: "data-servico-todos", nomePlural: "serviços" };
   const FILTRO_STATUS_CONFIG = { rotuloTodos: "Todos", dataTodosAttr: "data-status-todos", nomePlural: "status" };
   const FILTRO_SEVERIDADE_CONFIG = { rotuloTodos: "Todas", dataTodosAttr: "data-severidade-todos", nomePlural: "severidades" };
+  const FILTRO_CONTATO_PRIMARIO_CONFIG = { rotuloTodos: "Todos", dataTodosAttr: "data-contato-primario-todos", nomePlural: "contatos" };
 
   function preencherFiltros() {
     preencherFiltroCheckbox("filtroServico", valoresUnicos(dadosBrutos, "Serviço"), FILTRO_SERVICO_CONFIG);
     preencherFiltroCheckbox("filtroStatus", valoresUnicos(dadosBrutos, "Status"), FILTRO_STATUS_CONFIG);
     preencherFiltroCheckbox("filtroSeveridade", valoresUnicos(dadosBrutos, "Severidade"), FILTRO_SEVERIDADE_CONFIG);
+    preencherFiltroCheckbox("filtroContatoPrimario", valoresUnicos(dadosBrutos, "Contato Primário"), FILTRO_CONTATO_PRIMARIO_CONFIG);
   }
 
   function filtrarDados() {
     const servicosSelecionados = obterSelecionadosCheckbox("filtroServico", FILTRO_SERVICO_CONFIG);
     const statusSelecionados = obterSelecionadosCheckbox("filtroStatus", FILTRO_STATUS_CONFIG);
     const severidadesSelecionadas = obterSelecionadosCheckbox("filtroSeveridade", FILTRO_SEVERIDADE_CONFIG);
+    const contatosPrimariosSelecionados = obterSelecionadosCheckbox("filtroContatoPrimario", FILTRO_CONTATO_PRIMARIO_CONFIG);
 
     return (dadosBrutos || []).filter(item => {
       if (servicosSelecionados.length && !servicosSelecionados.includes(item["Serviço"])) return false;
       if (statusSelecionados.length && !statusSelecionados.includes(item["Status"])) return false;
       if (severidadesSelecionadas.length && !severidadesSelecionadas.includes(item["Severidade"])) return false;
+      if (contatosPrimariosSelecionados.length && !contatosPrimariosSelecionados.includes(String(item["Contato Primário"] || "").trim())) return false;
       return true;
     });
   }
@@ -467,6 +471,7 @@
     configurarFiltroCheckbox("filtroServico", FILTRO_SERVICO_CONFIG, atualizarPagina);
     configurarFiltroCheckbox("filtroStatus", FILTRO_STATUS_CONFIG, atualizarPagina);
     configurarFiltroCheckbox("filtroSeveridade", FILTRO_SEVERIDADE_CONFIG, atualizarPagina);
+    configurarFiltroCheckbox("filtroContatoPrimario", FILTRO_CONTATO_PRIMARIO_CONFIG, atualizarPagina);
     document.getElementById("buscaTabela")?.addEventListener("input", atualizarPagina);
 
     fileInput?.addEventListener("change", async (ev) => {

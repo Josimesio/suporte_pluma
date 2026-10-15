@@ -164,7 +164,7 @@
       message("Carregando a SR compartilhada...");
       try {
         await window.plumaAuthPronto;
-        const response = await fetch("dados/planilha-sr.json?v=20261008-sr-1", { cache: "no-store" });
+        const response = await fetch("dados/planilha-sr.json?v=20261015-v19-sem-duplicata", { cache: "no-store" });
         if (!response.ok) throw new Error("Arquivo de dados não encontrado.");
         const data = await response.json();
         if (data.headers?.length !== 25 || !Array.isArray(data.rows)) throw new Error("Estrutura da planilha inválida.");

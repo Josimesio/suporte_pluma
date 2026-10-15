@@ -81,7 +81,7 @@
     const headers = window.PlumaSRWorkbook.snapshot().headers;
     for (const change of changes.slice(page * 100, page * 100 + 100)) {
       const tr = body.insertRow();
-      for (const value of [`${change.numero_sr}\n${change.id}`, headers[change.coluna], change.anterior ?? "(vazio)", change.recebido ?? "(vazio)", change.novo ?? "(vazio)"]) tr.insertCell().textContent = String(value);
+      for (const value of [`${change.numero_sr}\nLinha ${change.linha_origem || "nova"} • ${change.id}`, headers[change.coluna], change.anterior ?? "(vazio)", change.recebido ?? "(vazio)", change.novo ?? "(vazio)"]) tr.insertCell().textContent = String(value);
     }
     $("srImportPage").textContent = `Página ${page + 1} de ${pages} • ${changes.length} célula(s)`;
     $("srImportPrev").disabled = page === 0; $("srImportNext").disabled = page === pages - 1;
@@ -116,15 +116,15 @@
       const sb = await window.obterClienteSupabase();
       if (jobId !== job || !dialog.open) return;
       const { data, error } = await sb.rpc("prever_importacao_sr", { p_revisao: source.revision, p_ano: year, p_linhas: rows });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error([error.message, error.hint].filter(Boolean).join(" "));
       if (jobId !== job || !dialog.open) return;
-      if (data?.modo !== "acrescentar_v17") throw new Error("Execute sql/ATUALIZAR_IMPORTACAO_ACRESCENTAR_V17.sql no Supabase para preservar o conteúdo atual antes de importar");
-      fileHash = hash; preview = data; changes = preview.linhas.flatMap(row => row.alteracoes.map(change => ({ ...change, numero_sr: row.numero_sr, id: row.id })));
-      status(`${preview.celulas} célula(s) com novidades • ${preview.novas} linha(s) nova(s) • ${preview.ignoradas} linha(s) fora da lista do ano, preservadas.`);
+      if (data?.modo !== "acrescentar_v17" || data.identificacao !== "linhas_v18") throw new Error("Execute sql/ATUALIZAR_IMPORTACAO_LINHAS_V18.sql no Supabase antes de importar. A V17 deve estar instalada.");
+      fileHash = hash; preview = data; changes = preview.linhas.flatMap(row => row.alteracoes.map(change => ({ ...change, numero_sr: row.numero_sr, id: row.id, linha_origem: row.linha_origem })));
+      status(`${preview.conciliadas || 0} linha(s) identificada(s) entre SRs repetidas na base • ${preview.celulas} célula(s) com novidades • ${preview.novas} linha(s) nova(s) • ${preview.ignoradas} linha(s) fora da lista do ano, preservadas.`);
       renderPreview();
     } catch (error) {
       if (jobId !== job) return;
-      const message = `Não foi possível preparar a carga: ${error.message}. Confira a instalação V17 no Supabase.`;
+      const message = `Não foi possível preparar a carga: ${error.message}`;
       if (dialog.open) status(message); else window.PlumaConsolidado.aviso(message, "danger");
       $("srImportApply").disabled = true;
     } finally { if (jobId === job && !dialog.open) setBusy(false); }
@@ -136,7 +136,7 @@
     try {
       await check(); const sb = await window.obterClienteSupabase();
       const { data, error } = await sb.rpc("importar_atualizacao_sr", { p_previa: preview, p_arquivo: fileName, p_hash: fileHash });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error([error.message, error.hint].filter(Boolean).join(" "));
       dialog.close(); setBusy(false); preview = undefined;
       window.PlumaConsolidado.aviso(`Carga de ${fileName} concluída: novidades acrescentadas em ${data.celulas} célula(s), ${data.novas} linha(s) nova(s). Conteúdo anterior preservado e histórico por coluna × linha registrado como Planilha.`, "success");
       try { await window.PlumaSRWorkbook.recarregar(); }

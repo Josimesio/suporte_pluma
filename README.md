@@ -1,3 +1,31 @@
+# SUPORTE ORACLE — Posição do botão inferior (V21)
+
+O botão **Salvar consolidado** do rodapé fica à direita, imediatamente antes de **Anterior**, na página inicial e nas páginas de 2025 e 2026.
+
+Publique o pacote e pressione **Ctrl+F5**. A rotina de salvamento é a mesma da V20 e não há novo SQL. Consulte `ATUALIZAR_POSICAO_SALVAR_V21.txt`.
+
+# SUPORTE ORACLE — Salvar também no rodapé (V20)
+
+O botão **Salvar consolidado** também está disponível abaixo da tabela, antes da paginação, na página inicial e nas páginas de 2025 e 2026. Os dois botões usam o mesmo salvamento e compartilham o estado de permissão e alterações pendentes.
+
+Publique o pacote e pressione **Ctrl+F5**. Não há novo SQL para esta alteração. Consulte `ATUALIZAR_BOTAO_SALVAR_V20.txt`.
+
+# SUPORTE ORACLE — Reconhecer exclusão da duplicata (V19)
+
+Após a exclusão da linha 216 da SR `4-0003830879` no banco, publique este pacote e pressione **Ctrl+F5**. Clique em **Recarregar consolidado**.
+
+A V19 remove a linha 216 da base inicial do site e dos scripts de instalação inicial. A linha 214 continua com o mesmo ID e Aging automático. A validação de integridade continua ativa para todas as outras linhas. **Não execute a carga inicial no banco atual.**
+
+Não há SQL novo para a V19. Se a V18 ainda não foi instalada para a importação semanal, execute somente sua atualização, após a V17. Consulte `ATUALIZAR_EXCLUSAO_DUPLICATA_V19.txt`.
+
+# SUPORTE ORACLE — Correção da carga semanal (V18)
+
+Execute `sql/ATUALIZAR_IMPORTACAO_LINHAS_V18.sql` no Supabase após a V17, publique o pacote e pressione **Ctrl+F5**. Depois importe novamente o Excel semanal.
+
+A V18 identifica uma única linha entre SRs repetidas na base usando os dados originais e o tipo de Aging, sem excluir registros nem históricos. Se não houver uma correspondência única, exige o ID fixo do modelo semanal.
+
+As regras de acréscimo de conteúdo e as permissões da V17 permanecem. Consulte `ATUALIZAR_CARGA_SEMANAL_V18.txt`.
+
 # SUPORTE ORACLE — Acrescentar novidades na mesma célula (V17)
 
 A importação semanal mantém o conteúdo atual do site e acrescenta as novidades

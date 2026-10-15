@@ -26,7 +26,9 @@
     const state = window.PlumaSRWorkbook?.snapshot();
     const complement = comments.snapshot(year), busy = loading || saving || state?.busy || complement.busy || window.PlumaImportacaoSR?.busy;
     const pending = (state?.pending || 0) + complement.pending;
-    $("srMergedSave").disabled = busy || !(state?.cloudReady && state?.editor && state.pending || complement.ready && complement.editor && complement.pending);
+    const saveDisabled = busy || !(state?.cloudReady && state?.editor && state.pending || complement.ready && complement.editor && complement.pending);
+    $("srMergedSave").disabled = saveDisabled;
+    $("srMergedSaveBottom").disabled = saveDisabled;
     $("srMergedDiscard").disabled = busy || !pending;
     $("srMergedExport").disabled = busy || !entries.length;
     $("srMergedReload").disabled = busy;
@@ -217,6 +219,7 @@
     finally { controls(); }
   }
   $("srMergedBody").addEventListener("input", event => event.target.dataset.commentField ? comments.editar(event) : window.PlumaSRWorkbook.editar(event));
+  $("srMergedSaveBottom").addEventListener("click", () => $("srMergedSave").click());
   $("srMergedSave").addEventListener("click", async () => {
     if (saving || loading || !await window.PlumaAbas.permitir("consolidado", year)) return;
     saving = true; render(); message("Salvando consolidado e registrando versões...");

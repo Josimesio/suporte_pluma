@@ -173,6 +173,7 @@
     $("srSheet").hidden = !mostrarPlanilha;
     $("srWorkbook").hidden = !mostrarSR;
     $("srMerged").hidden = !consolidado;
+    $("srOcorrencias").hidden = aba !== "ocorrencias";
     if (consolidado) {
       $("srViews").setAttribute("role", "tabpanel");
       $("srViews").setAttribute("aria-labelledby", "srConsolidatedTab");
@@ -190,6 +191,7 @@
     if (mostrarPlanilha && !carregado) await carregar();
     if (mostrarSR) await window.PlumaSRWorkbook?.abrir();
     if (consolidado) await window.PlumaConsolidado?.abrir();
+    if (aba === "ocorrencias") await window.PlumaGTN?.abrir();
     else if (anterior === "consolidado") window.PlumaListaOracle?.restaurar();
     if (mostrarPainel && window.Chart?.instances) {
       requestAnimationFrame(() => Object.values(window.Chart.instances).forEach(chart => chart.resize()));

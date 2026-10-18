@@ -308,7 +308,7 @@
   }
 
   function usuarioPodeVisualizarAba(aba) {
-    if (perfilSessao?.ativo !== true || !["planilha", "sr", "consolidado"].includes(aba)) return false;
+    if (perfilSessao?.ativo !== true || !["planilha", "sr", "consolidado", "ocorrencias"].includes(aba)) return false;
     if (perfilSessao.perfil === "administrador") return true;
     const p = perfilSessao.permissoes || {};
     return p[`aba_${aba}`] === true && (p.inicio === true || p.chamados_2025 === true || p.chamados_2026 === true);

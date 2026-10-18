@@ -1,0 +1,123 @@
+/*
+ * GTN V5 - Ajustes pontuais na interface da V4.
+ * Não altera os dados, filtros de negócio, totalizadores nem chamadas ao Supabase.
+ */
+(() => {
+  'use strict';
+  if (window.__GTN_AJUSTES_V5__) return;
+  window.__GTN_AJUSTES_V5__ = true;
+
+  const labels = new Map([
+    ['STATUS ABERTA', 'STATUS ABERTAS'],
+    ['STATUS FECHADAS', 'STATUS FECHADAS'],
+    ['NOVAS', 'STATUS NOVA'],
+    ['EM VALIDAÇÃO', 'STATUS EM VALIDAÇÃO'],
+    ['EM ANÁLISE', 'STATUS EM ANÁLISE'],
+  ]);
+
+  const normalize = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toLocaleUpperCase('pt-BR');
+  const unaccent = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let defaultDone = false;
+  let pending = false;
+
+  // Restringe a alteração aos títulos dos cartões, nunca às opções dos filtros.
+  function isCardHeading(textNode) {
+    const p = textNode.parentElement;
+    if (!p || p.closest('option, select, textarea, [role="option"], [role="menuitem"]')) return false;
+    const old = normalize(textNode.nodeValue);
+    if (!labels.has(old)) return false;
+    for (let card = p; card && card !== document.body; card = card.parentElement) {
+      const classId = ((typeof card.className === 'string' ? card.className : '') + ' ' + (card.id || '')).toLowerCase();
+      const cardLike = /card|kpi|stat|indicador|metrica|metric|resumo|summary/.test(classId);
+      if (cardLike) {
+        const body = (card.innerText || card.textContent || '').trim();
+        if (body.length <= 250 && /\d/.test(body)) return true;
+      }
+    }
+    return false;
+  }
+
+  function fixHeadings() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const changes = [];
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const replacement = labels.get(normalize(node.nodeValue));
+      if (replacement && isCardHeading(node)) changes.push([node, replacement]);
+    }
+    for (const [node, replacement] of changes) node.nodeValue = replacement;
+
+    // Remove unicamente a palavra solta 'status' quando sobreposta ao cartão de abertas.
+    // Não elimina nenhum texto de status existente em outros elementos.
+    const headings = Array.from(document.querySelectorAll('body *'))
+      .filter(el => el.children.length === 0 && normalize(el.textContent) === 'STATUS ABERTAS');
+    for (const heading of headings) {
+      let card = heading.parentElement;
+      while (card && card !== document.body) {
+        const classId = String(card.className || '').toLowerCase();
+        if (/card|kpi|indicador|stat|metric/.test(classId)) break;
+        card = card.parentElement;
+      }
+      if (!card || card === document.body) continue;
+      for (const el of card.querySelectorAll('em, i, span, small')) {
+        if (el !== heading && !el.contains(heading) && !el.children.length && normalize(el.textContent) === 'STATUS') {
+          el.remove();
+        }
+      }
+    }
+  }
+
+  // A opção 'Todos' já existente no filtro passa a ser a escolha inicial.
+  // Respeita qualquer mudança feita depois pelo usuário.
+  function fixDefaultTodos() {
+    if (defaultDone) return;
+    const selects = Array.from(document.querySelectorAll('select'));
+    const candidates = selects.filter(select => {
+      const options = Array.from(select.options);
+      const hasAll = options.some(o => ['TODOS','TODAS','ALL'].includes(normalize(o.textContent)));
+      if (!hasAll) return false;
+      const attrs = [select.id, select.name, select.getAttribute('aria-label'),
+        select.closest('label')?.textContent, select.previousElementSibling?.textContent,
+        select.parentElement?.textContent?.slice(0, 130)].join(' ');
+      return /exibid|pagin|linha|registro|quantidade|mostrar|show|page.?size/i.test(unaccent(attrs));
+    });
+    // O seletor de quantidades é identificado pela opção 'Todos' e seu rótulo,
+    // não por valores específicos que poderiam afetar os filtros de status.
+    const target = candidates[0] || selects.find(select =>
+      Array.from(select.options).some(o => ['TODOS','TODAS','ALL'].includes(normalize(o.textContent))) &&
+      Array.from(select.options).some(o => /^(5|10|20|25|50|100)$/.test(o.textContent.trim()))
+    );
+    if (!target) return;
+    const allOption = Array.from(target.options).find(o => ['TODOS','TODAS','ALL'].includes(normalize(o.textContent)));
+    if (!allOption) return;
+    defaultDone = true;
+    if (target.value === allOption.value) return;
+    target.value = allOption.value;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    target.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function apply() {
+    pending = false;
+    fixHeadings();
+    fixDefaultTodos();
+  }
+  function queue() {
+    if (pending) return;
+    pending = true;
+    window.requestAnimationFrame(apply);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', apply, { once: true });
+  } else {
+    apply();
+  }
+  // Cards são reconstruídos quando os filtros ou os dados mudam.
+  const begin = () => {
+    const obs = new MutationObserver(queue);
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+    [100, 400, 1100].forEach(delay => setTimeout(apply, delay));
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', begin, { once: true });
+  else begin();
+})();

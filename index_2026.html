@@ -72,6 +72,7 @@
   </style>
 
   <link rel="stylesheet" href="css/painel-planilha.css?v=20261013-v17-acrescentar">
+  <link rel="stylesheet" href="css/ocorrencias-gtn.css?v=20261017-gtn-v4-indicadores">
 </head>
 
 <body>
@@ -123,6 +124,7 @@
         <button class="sr-tab" id="srSheetTab" type="button" role="tab" aria-controls="srSheet" aria-selected="false" tabindex="-1" data-sr-tab="planilha" data-requer-permissao="aba_planilha" hidden>Planilha</button>
         <button class="sr-tab" id="srWorkbookTab" type="button" role="tab" aria-controls="srWorkbook" aria-selected="false" tabindex="-1" data-sr-tab="sr" data-requer-permissao="aba_sr" hidden>SR</button>
         <button class="sr-tab" id="srConsolidatedTab" type="button" role="tab" aria-controls="srViews" aria-selected="false" tabindex="-1" data-sr-tab="consolidado" data-requer-permissao="aba_consolidado" hidden>Consolidado</button>
+        <button class="sr-tab" id="srOcorrenciasTab" type="button" role="tab" aria-controls="srOcorrencias" aria-selected="false" tabindex="-1" data-sr-tab="ocorrencias" data-requer-permissao="aba_ocorrencias" hidden>Ocorrências</button>
       </nav>
       <div id="srViews" class="sr-views">
       <section id="srPanel" class="sr-panel" role="tabpanel" aria-labelledby="srPanelTab">
@@ -451,8 +453,116 @@
           <div class="sr-sheet-footer"><span id="srMergedRange">0 linhas</span><div class="sr-sheet-pages flex-wrap justify-content-end"><button id="srMergedSaveBottom" type="button" class="btn btn-sm btn-success" disabled>Salvar consolidado</button><button id="srMergedPrev" type="button" class="btn btn-sm btn-outline-secondary">Anterior</button><span id="srMergedPageLabel">Página 1 de 1</span><button id="srMergedNext" type="button" class="btn btn-sm btn-outline-secondary">Próxima</button></div></div>
         </div>
       </section>
+      <section id="srOcorrencias" class="sr-sheet" role="tabpanel" aria-labelledby="srOcorrenciasTab" hidden>
+        <div class="sr-sheet-card">
+          <h2 class="sr-workbook-title">Ocorrências GTN — Consolidado de ocorrências</h2>
+          <div class="sr-sheet-toolbar">
+            <div class="gtn-filter-grid" style="flex:1 1 100%">
+              <div><label for="gtnStatus">Status</label><div class="gtn-multi"><button id="gtnStatus" type="button" class="gtn-multi-trigger" aria-expanded="false" aria-haspopup="true"><span class="gtn-multi-label">Todos</span><span class="gtn-multi-arrow" aria-hidden="true"></span></button><div class="gtn-multi-popup" hidden></div></div></div>
+              <div><label for="gtnModulo">Módulo/Sistema</label><div class="gtn-multi"><button id="gtnModulo" type="button" class="gtn-multi-trigger" aria-expanded="false" aria-haspopup="true"><span class="gtn-multi-label">Todos</span><span class="gtn-multi-arrow" aria-hidden="true"></span></button><div class="gtn-multi-popup" hidden></div></div></div>
+              <div><label for="gtnDono">Dono KU</label><div class="gtn-multi"><button id="gtnDono" type="button" class="gtn-multi-trigger" aria-expanded="false" aria-haspopup="true"><span class="gtn-multi-label">Todos</span><span class="gtn-multi-arrow" aria-hidden="true"></span></button><div class="gtn-multi-popup" hidden></div></div></div>
+              <div><label for="gtnAnalista">Analista</label><div class="gtn-multi"><button id="gtnAnalista" type="button" class="gtn-multi-trigger" aria-expanded="false" aria-haspopup="true"><span class="gtn-multi-label">Todos</span><span class="gtn-multi-arrow" aria-hidden="true"></span></button><div class="gtn-multi-popup" hidden></div></div></div>
+              <div><label for="gtnArea">Área de negócio</label><div class="gtn-multi"><button id="gtnArea" type="button" class="gtn-multi-trigger" aria-expanded="false" aria-haspopup="true"><span class="gtn-multi-label">Todos</span><span class="gtn-multi-arrow" aria-hidden="true"></span></button><div class="gtn-multi-popup" hidden></div></div></div>
+              <div class="gtn-search-cell"><label for="gtnBusca">Busca rápida em todas as 25 colunas</label><input id="gtnBusca" class="form-control form-control-sm" type="search" placeholder="Código, descrição, SR, comentários, módulo..."></div>
+            </div>
+          </div>
+          <!-- Indicadores exclusivos do GTN: sempre calculados sobre os filtros ativos. -->
+          <section id="gtnIndicadores" class="gtn-indicadores" aria-label="Indicadores de ocorrências GTN">
+            <div class="gtn-indicadores-cabecalho">
+              <span>Resumo das ocorrências GTN</span>
+              <span class="gtn-indicadores-escopo" id="gtnKpiEscopo">Calculado a partir das ocorrências consultadas</span>
+            </div>
+            <div class="gtn-indicadores-grid gtn-indicadores-grid--situacao">
+              <div class="card pl-card-kpi text-center gtn-indicador-card">
+                <button type="button" class="gtn-indicador-acao" data-gtn-indicador="total" aria-pressed="true" title="Filtrar ocorrências: Total de ocorrências GTN">
+                  <span class="gtn-indicador-titulo">Total de ocorrências GTN</span><span id="gtnKpiTotal" class="kpi-valor">—</span>
+                </button>
+              </div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card">
+                <button type="button" class="gtn-indicador-acao" data-gtn-indicador="abertas" aria-pressed="false" title="Filtrar ocorrências: Total abertas">
+                  <span class="gtn-indicador-titulo">STATUS ABERTA</span><span id="gtnKpiAbertas" class="kpi-valor">—</span>
+                </button>
+              </div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card">
+                <button type="button" class="gtn-indicador-acao" data-gtn-indicador="fechadas" aria-pressed="false" title="Filtrar ocorrências: Total fechadas">
+                  <span class="gtn-indicador-titulo">STATUS FECHADAS</span><span id="gtnKpiFechadas" class="kpi-valor">—</span>
+                </button>
+              </div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card">
+                <button type="button" class="gtn-indicador-acao" data-gtn-indicador="novas" aria-pressed="false" title="Filtrar ocorrências: Novas">
+                  <span class="gtn-indicador-titulo">STATUS NOVAS</span><span id="gtnKpiNovas" class="kpi-valor">—</span>
+                </button>
+              </div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card">
+                <button type="button" class="gtn-indicador-acao" data-gtn-indicador="validacao" aria-pressed="false" title="Filtrar ocorrências: Em validação">
+                  <span class="gtn-indicador-titulo">STATUS EM VALIDAÇÃO</span><span id="gtnKpiValidacao" class="kpi-valor">—</span>
+                </button>
+              </div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card">
+                <button type="button" class="gtn-indicador-acao" data-gtn-indicador="analise" aria-pressed="false" title="Filtrar ocorrências: Em análise">
+                  <span class="gtn-indicador-titulo">STATUS EM ANÁLISE</span><span id="gtnKpiAnalise" class="kpi-valor">—</span>
+                </button>
+              </div>
+            </div>
+            <div class="gtn-indicadores-nota">
+              <span>Outros status: <strong id="gtnKpiOutros">—</strong></span>
+              <span>Com campo SR preenchido: <strong id="gtnKpiComSR">—</strong></span>
+            </div>
+            <div class="gtn-indicadores-cabecalho gtn-indicadores-mensal">
+              <span>Resumo do mês corrente</span>
+              <span class="gtn-mes-selo" id="gtnKpiMesSelo">Mês atual</span>
+            </div>
+            <div class="gtn-indicadores-grid">
+              <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
+                <h3 class="card-title">Criadas no mês</h3><p id="gtnKpiCriadasMes" class="card-text kpi-valor mb-0">—</p>
+              </div></div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
+                <h3 class="card-title">Atualizadas no mês</h3><p id="gtnKpiAtualizadasMes" class="card-text kpi-valor mb-0">—</p>
+              </div></div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
+                <h3 class="card-title">Criadas no mês e ainda Novas</h3><p id="gtnKpiNovasMes" class="card-text kpi-valor mb-0">—</p>
+              </div></div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
+                <h3 class="card-title">Referência</h3><p id="gtnKpiMesNome" class="card-text kpi-valor mb-0">—</p>
+              </div></div>
+            </div>
+          </section>
+          <div class="sr-sheet-toolbar">
+            <div><label for="gtnTamanho">Linhas por página</label><select id="gtnTamanho" class="form-select form-select-sm"><option>5</option><option>10</option><option selected>20</option><option>50</option><option>100</option><option value="all">Todas</option></select></div>
+            <div class="sr-sheet-actions">
+              <button id="gtnRecarregar" type="button" class="btn btn-sm btn-outline-secondary">Recarregar GTN</button>
+              <button id="gtnDescartar" type="button" class="btn btn-sm btn-outline-secondary" disabled>Descartar alterações</button>
+              <button id="gtnExportar" type="button" class="btn btn-sm btn-outline-success" disabled>Exportar Excel</button>
+              <button id="gtnSalvar" type="button" class="btn btn-sm btn-success" disabled>Salvar alterações GTN</button>
+            </div>
+          </div>
+          <div class="sr-sheet-meta"><span id="gtnTotal">Aguardando a primeira consulta</span><span id="gtnPendentes">Nenhuma alteração pendente</span><span id="gtnSincronizacao"></span></div>
+          <p id="gtnOrientacao" class="small text-muted mx-3 mt-2 mb-0">21 campos importados somente para consulta e 4 campos amarelos editáveis.</p>
+          <div id="gtnAviso" class="sr-sheet-status alert alert-info py-2" role="status" aria-live="polite" hidden></div>
+          <div class="sr-sheet-scroll" role="region" aria-label="Ocorrências GTN, 25 colunas com rolagem horizontal" tabindex="0">
+            <table class="sr-grid gtn-grid"><thead><tr id="gtnGrupos"></tr><tr id="gtnCabecalhos"></tr></thead><tbody id="gtnCorpo"></tbody></table>
+          </div>
+          <div class="sr-sheet-footer gtn-toolbar-bottom">
+            <span id="gtnIntervalo">0 registros</span>
+            <div class="sr-sheet-pages flex-wrap justify-content-end">
+              <button id="gtnSalvarRodape" type="button" class="btn btn-sm btn-success" disabled>Salvar alterações GTN</button>
+              <button id="gtnAnterior" type="button" class="btn btn-sm btn-outline-secondary">Anterior</button>
+              <span id="gtnPagina">Página 1 de 1</span>
+              <button id="gtnProximo" type="button" class="btn btn-sm btn-outline-secondary">Próxima</button>
+            </div>
+          </div>
+        </div>
+      </section>
       </div>
 </main>
+
+    <dialog id="gtnHistoricoModal" class="sr-version-dialog" aria-labelledby="gtnHistoricoTitulo">
+      <div class="sr-version-dialog-head">
+        <h2 id="gtnHistoricoTitulo">Histórico da célula</h2>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="gtnFecharHistorico">Fechar</button>
+      </div>
+      <div id="gtnHistoricoCorpo"></div>
+    </dialog>
 
     <dialog id="modalSolicitacaoAnalitico" aria-labelledby="tituloSolicitacaoAnalitico" style="width:min(600px,calc(100% - 30px));border:0;border-radius:14px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.35)">
       <div class="modal-content">
@@ -606,7 +716,8 @@
   <script src="js/comentarios-consolidado.js?v=20261013-v14-historico-admin"></script>
   <script src="js/consolidado-sr.js?v=20261015-v20-salvar-rodape"></script>
   <script src="js/importacao-semanal-sr.js?v=20261015-v18-linhas"></script>
-  <script src="js/painel-planilha.js?v=20261013-v15-new"></script>
+  <script src="js/ocorrencias-gtn.js?v=20261017-gtn-v4-indicadores"></script>
+  <script src="js/painel-planilha.js?v=20261017-gtn-v1"></script>
 
 </body>
 </html>

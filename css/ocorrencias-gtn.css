@@ -1,0 +1,116 @@
+/* GTN — tabela de largura livre com rolagem horizontal, preservando TODAS as colunas. */
+#srOcorrencias { min-width: 0; padding-top: 14px; }
+#srOcorrencias .sr-sheet-scroll { max-height: 66vh; overflow: auto; overscroll-behavior: contain; }
+#srOcorrencias .gtn-grid { min-width: 2700px; width: max-content; }
+#srOcorrencias .gtn-grid th { max-width: none; }
+#srOcorrencias .gtn-grid th button { color: inherit; border: 0; background: none; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+#srOcorrencias .gtn-grid th button:focus-visible { outline: 2px solid #f2c700; }
+#srOcorrencias .gtn-grupo-fixo { text-align: center; background: #005448; position: sticky; top: 0; }
+#srOcorrencias .gtn-grupo-editavel { text-align: center; background: #c2a000; color: #0d3127; position: sticky; top: 0; }
+#srOcorrencias .gtn-grid #gtnCabecalhos th { top: 35px; }
+#srOcorrencias .gtn-grid thead tr:first-child th:first-child { position: sticky; left: 0; z-index: 6; }
+#srOcorrencias .gtn-grid thead tr:nth-child(2) th:first-child { position: sticky; left: 0; z-index: 5; }
+#srOcorrencias .gtn-cab-editavel { background: #f2c700 !important; color: #153a33 !important; }
+#srOcorrencias .gtn-fronteira { border-left: 4px solid #a78a00 !important; }
+#srOcorrencias .gtn-grid td.gtn-somente-leitura { min-width: 140px; max-width: 340px; vertical-align: top; padding: 8px 10px; }
+#srOcorrencias .gtn-valor { max-width: 330px; overflow-wrap: anywhere; white-space: pre-wrap; }
+#srOcorrencias .gtn-texto-longo { width: 340px; max-height: 105px; overflow: auto; padding-right: 6px; }
+#srOcorrencias .gtn-texto-longo:focus-visible { outline: 2px solid #006e51; }
+#srOcorrencias .gtn-codigo { position: sticky; left: 0; z-index: 1; background: #e5f1eb !important; padding: 8px 12px; min-width: 95px; font-weight: 700; color: #003f35; }
+#srOcorrencias .gtn-grid td.gtn-editavel { min-width: 150px; vertical-align: top; background: #fff9c9 !important; padding: 5px 7px; }
+#srOcorrencias .gtn-grid tr:nth-child(even) td.gtn-editavel { background: #fff3aa !important; }
+#srOcorrencias .gtn-grid td.gtn-editavel.sr-cell-changed { background: #ffdf6c !important; }
+#srOcorrencias .gtn-editavel input, #srOcorrencias .gtn-editavel select, #srOcorrencias .gtn-editavel textarea { display:block; box-sizing:border-box; width: 168px; border: 1px solid #d8c670; border-radius: 4px; background: white; min-height: 38px; padding: 6px; color: #1d2825; font: inherit; }
+#srOcorrencias .gtn-editavel select { height: 38px; }
+#srOcorrencias .gtn-editavel textarea { width: 360px; min-height: 70px; height: 70px; resize: vertical; }
+#srOcorrencias .gtn-editavel :disabled { background: #fffdea !important; color: #42544b; opacity: 1; cursor: default; }
+#srOcorrencias .gtn-editavel input:focus, #srOcorrencias .gtn-editavel select:focus, #srOcorrencias .gtn-editavel textarea:focus { outline: 2px solid #006e51; }
+#srOcorrencias .gtn-versao { display: inline-block; margin: 6px 7px 0 2px; color: #64500b; font-weight: 700; font-size: .72rem; }
+#srOcorrencias .gtn-editavel .sr-history-button { display: inline-block; margin-top: 4px; font-size: .73rem; }
+#srOcorrencias .gtn-meta { color: #52685c; font-size: .81rem; }
+#srOcorrencias .gtn-filter-grid { display: flex; flex-wrap:wrap; gap:8px 12px; }
+#srOcorrencias .gtn-filter-grid > div { min-width: 145px; flex: 1 1 170px; }
+#srOcorrencias .gtn-filter-grid > .gtn-search-cell { flex: 2 1 260px; }
+#srOcorrencias .gtn-filter-grid label { display:block; font-size:.8rem; font-weight:600; color:#003f35; margin-bottom:4px; }
+#srOcorrencias .gtn-filter-grid select, #srOcorrencias .gtn-filter-grid input { max-width:100%; }
+#srOcorrencias .gtn-toolbar-bottom { justify-content:space-between; }
+@media(max-width:767px) { #srOcorrencias { padding: 7px; } #srOcorrencias .sr-sheet-scroll { margin:8px; } }
+
+/* GTN V2 — filtros de seleção múltipla com lista pesquisável. */
+#srOcorrencias .gtn-multi { position: relative; width: 100%; }
+#srOcorrencias .gtn-multi-trigger { display: flex; gap: 9px; justify-content: space-between;
+  align-items: center; width: 100%; min-height: 37px; padding: 6px 12px;
+  border: 1px solid #cbd5dc; border-radius: 6px; background: #fff;
+  color: #283332; text-align: left; font-size: .875rem; cursor: pointer; }
+#srOcorrencias .gtn-multi-trigger:hover { border-color: #006e51; }
+#srOcorrencias .gtn-multi-trigger:focus-visible { outline: 3px solid #a0c4ff; outline-offset: 1px; }
+#srOcorrencias .gtn-multi-label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#srOcorrencias .gtn-multi-arrow { flex: 0 0 auto; border: solid #465250; border-width: 0 1.5px 1.5px 0;
+  width: 7px; height: 7px; transform: rotate(45deg); margin: -3px 2px 0 0; }
+#srOcorrencias .gtn-multi-ativo { border-color: #006e51; background: #eaf7f0; color: #003f35; font-weight: 700; }
+#srOcorrencias .gtn-multi-popup { position: absolute; left: 0; top: calc(100% + 5px); z-index: 1100;
+  width: max(100%, 270px); max-width: min(340px, 86vw); padding: 10px; border: 1px solid #cbdad1;
+  border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #003f3530; }
+#srOcorrencias .gtn-multi-popup[hidden] { display: none !important; }
+#srOcorrencias .gtn-multi-aberto { z-index: 1101; }
+#srOcorrencias .gtn-filter-grid > div:nth-child(5) .gtn-multi-popup { right: 0; left: auto; }
+#srOcorrencias .gtn-multi-pesquisa { width: 100%; max-width: none; margin: 0 0 9px; }
+#srOcorrencias .gtn-multi-acoes { display: flex; gap: 8px; justify-content: space-between; margin-bottom: 7px; }
+#srOcorrencias .gtn-multi-acoes button { border: 0; padding: 2px 0; color: #006e51;
+  background: transparent; text-decoration: underline; cursor: pointer; font-size: .8rem; font-weight: 600; }
+#srOcorrencias .gtn-multi-acoes button:focus-visible { outline: 2px solid #006e51; }
+#srOcorrencias .gtn-multi-lista { overflow-y: auto; max-height: 230px; border-top: 1px solid #edf0ee;
+  border-bottom: 1px solid #edf0ee; padding: 4px 0; }
+#srOcorrencias .gtn-multi-lista .gtn-multi-item { display: flex; align-items: flex-start;
+  gap: 9px; padding: 6px; margin: 0; cursor: pointer; font-weight: normal; color: #243832;
+  font-size: .84rem; overflow-wrap: anywhere; }
+#srOcorrencias .gtn-multi-item:hover { background: #edf7f1; }
+#srOcorrencias .gtn-multi-item input[type="checkbox"] { flex: 0 0 auto; margin-top: 3px;
+  accent-color: #006e51; width: 15px; height: 15px; }
+#srOcorrencias .gtn-multi-contador { padding-top: 7px; color: #56665f; font-size: .74rem; }
+#srOcorrencias .gtn-multi-vazio { color: #67716f; font-size: .8rem; padding: 10px 4px; margin: 0; }
+@media(max-width: 767px) { #srOcorrencias .gtn-multi-popup { width: 100%; max-width: 100%; }
+  #srOcorrencias .gtn-filter-grid > div:nth-child(5) .gtn-multi-popup { left: 0; right: auto; } }
+
+/* V3 — indicadores exclusivos da aba Ocorrências GTN */
+#srOcorrencias .gtn-indicadores { margin: 12px 0 18px; padding: 0 10px; }
+#srOcorrencias .gtn-indicadores-cabecalho { display:flex; flex-wrap:wrap; align-items:center;
+  justify-content:space-between; gap: 6px 12px; margin: 0 0 8px; font-weight:600;
+  color:#354a42; font-size:.92rem; }
+#srOcorrencias .gtn-indicadores-escopo { font-size: .78rem; font-weight:400; color:#61716b; }
+#srOcorrencias .gtn-indicadores-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+#srOcorrencias .gtn-indicador-card { min-width:0; margin:0; border-top:4px solid #f2c700;
+  box-shadow:0 1px 5px #001b151a; }
+#srOcorrencias .gtn-indicador-card .card-title { color:#006e51; font-size:.78rem;
+  text-transform:uppercase; font-weight:500; margin:0 0 8px; min-height:17px; }
+#srOcorrencias .gtn-indicador-card .kpi-valor { color:#003f35; font-size:1.48rem;
+  font-weight:700; line-height:1.35; overflow-wrap:anywhere; }
+#srOcorrencias .gtn-indicadores-nota { display:flex; flex-wrap:wrap; gap:8px 24px;
+  padding:8px 2px 12px; color:#52645a; font-size:.78rem; }
+#srOcorrencias .gtn-indicadores-nota strong { color:#003f35; }
+#srOcorrencias .gtn-indicadores-mensal { margin-top:2px; }
+#srOcorrencias .gtn-mes-selo { background:#f2c700; color:#182822; border-radius:7px;
+  padding:5px 10px; font-weight:700; font-size:.79rem; }
+@media(max-width:991.98px) { #srOcorrencias .gtn-indicadores-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:480px) { #srOcorrencias .gtn-indicadores-grid { grid-template-columns:1fr; }
+ #srOcorrencias .gtn-indicadores { padding:0 4px; } }
+
+/* V4 — seis indicadores clicáveis; filtro rápido independente dos multisseleção. */
+#srOcorrencias .gtn-indicadores-grid--situacao {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+#srOcorrencias .gtn-indicador-acao {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:100%; min-height:82px; height:100%; padding:10px 8px; border:0;
+  color:inherit; background:transparent; cursor:pointer;
+}
+#srOcorrencias .gtn-indicador-acao:hover { background:#fffbed; }
+#srOcorrencias .gtn-indicador-acao:focus-visible { outline:3px solid #006e51; outline-offset:-3px; }
+#srOcorrencias .gtn-indicador-titulo { color:#006e51; font-size:.78rem;
+  line-height:1.3; text-transform:uppercase; font-weight:500; margin-bottom:6px; }
+#srOcorrencias .gtn-indicador-ativo { border-top-color:#006e51;
+  box-shadow:0 0 0 2px #006e51, 0 1px 5px #001b151a; }
+#srOcorrencias .gtn-indicador-ativo .gtn-indicador-acao { background:#f1faf5; }
+@media(max-width:1399.98px) { #srOcorrencias .gtn-indicadores-grid--situacao { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:767.98px) { #srOcorrencias .gtn-indicadores-grid--situacao { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:480px) { #srOcorrencias .gtn-indicadores-grid--situacao { grid-template-columns:1fr; } }

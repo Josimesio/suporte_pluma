@@ -53,7 +53,7 @@
   border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #003f3530; }
 #srOcorrencias .gtn-multi-popup[hidden] { display: none !important; }
 #srOcorrencias .gtn-multi-aberto { z-index: 1101; }
-#srOcorrencias .gtn-filter-grid > div:nth-child(5) .gtn-multi-popup { right: 0; left: auto; }
+#srOcorrencias .gtn-filter-grid > div:nth-last-child(2) .gtn-multi-popup { right: 0; left: auto; }
 #srOcorrencias .gtn-multi-pesquisa { width: 100%; max-width: none; margin: 0 0 9px; }
 #srOcorrencias .gtn-multi-acoes { display: flex; gap: 8px; justify-content: space-between; margin-bottom: 7px; }
 #srOcorrencias .gtn-multi-acoes button { border: 0; padding: 2px 0; color: #006e51;
@@ -70,7 +70,7 @@
 #srOcorrencias .gtn-multi-contador { padding-top: 7px; color: #56665f; font-size: .74rem; }
 #srOcorrencias .gtn-multi-vazio { color: #67716f; font-size: .8rem; padding: 10px 4px; margin: 0; }
 @media(max-width: 767px) { #srOcorrencias .gtn-multi-popup { width: 100%; max-width: 100%; }
-  #srOcorrencias .gtn-filter-grid > div:nth-child(5) .gtn-multi-popup { left: 0; right: auto; } }
+  #srOcorrencias .gtn-filter-grid > div:nth-last-child(2) .gtn-multi-popup { left: 0; right: auto; } }
 
 /* V3 — indicadores exclusivos da aba Ocorrências GTN */
 #srOcorrencias .gtn-indicadores { margin: 12px 0 18px; padding: 0 10px; }

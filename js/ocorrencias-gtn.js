@@ -74,6 +74,7 @@
   // Cada filtro mantém um conjunto de valores selecionados (lógica OU dentro do filtro).
   // Entre filtros diferentes a lógica é E. A pesquisa livre também combina com os filtros.
   const filtrosMulti = [
+    { id: "gtnPlanoTeste", source: "Plano de Teste" },
     { id: "gtnStatus", source: "Status da Ocorrência" },
     { id: "gtnModulo", source: "Módulo/Sistema" },
     { id: "gtnDono", source: "Dono (KeyUser/Cliente)" },
@@ -198,7 +199,7 @@
   function filtros() {
     filtrosMulti.forEach(filtroOptions);
   }
-  // Um indicador pode filtrar a grade sem sobrescrever os cinco filtros multisseleção.
+  // Um indicador pode filtrar a grade sem sobrescrever os filtros multisseleção.
   // Seus números continuam refletindo os filtros normais, permitindo alternar entre indicadores.
   let indicadorRapido = "total";
   const nomesIndicadores = {

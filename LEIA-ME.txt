@@ -1,0 +1,10 @@
+TOTALIZADOR AGUARDANDO MELHORIAS — V6
+Base: versão validada com correção de recarga V5.
+
+Substitua os três arquivos deste ZIP nas mesmas pastas do site, publique e pressione Ctrl+F5.
+O novo cartão conta o status Aguardar Melhoria e permite filtrar a grade por clique. Um segundo clique retorna ao total. Respeita os filtros existentes.
+No CSV enviado são 15 ocorrências nesse status. Outros status passa a excluir os registros agora exibidos no cartão próprio.
+O layout passa a sete cartões em telas largas e mantém as regras existentes para telas menores.
+Preserva a correção de data/recarga V5. Não requer SQL nem reimportação.
+
+Validação local com o CSV real de 885 registros e banco simulado: cartão 15, clique exibe 15 linhas, segundo clique retorna a 885; abertas 488 e fechadas 397 preservadas; recarga, data de geração e rascunhos continuam passando.

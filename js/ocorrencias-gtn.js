@@ -204,7 +204,7 @@
   let indicadorRapido = "total";
   const nomesIndicadores = {
     total: "Total de ocorrências", abertas: "STATUS ABERTA", fechadas: "STATUS FECHADAS",
-    novas: "Novas", validacao: "Em validação", analise: "Em análise"
+    novas: "Novas", validacao: "Em validação", analise: "Em análise", melhorias: "Aguardando melhorias"
   };
   function statusGTN(r) {
     return texto(r.dados?.["Status da Ocorrência"]).trim().toLocaleLowerCase("pt-BR")
@@ -222,6 +222,7 @@
       case "novas": return statusGTN(r) === "nova";
       case "validacao": return statusGTN(r) === "em validacao";
       case "analise": return statusGTN(r) === "em analise";
+      case "melhorias": return statusGTN(r) === "aguardar melhoria";
       default: return true;
     }
   }
@@ -324,6 +325,7 @@
     const novas = basicos.filter(r => statusGTN(r) === 'nova').length;
     const analise = basicos.filter(r => statusGTN(r) === 'em analise').length;
     const validacao = basicos.filter(r => statusGTN(r) === 'em validacao').length;
+    const melhorias = basicos.filter(r => statusGTN(r) === 'aguardar melhoria').length;
     const fechadas = basicos.filter(estaFechadaGTN).length;
     const criadas = filtrados.filter(r => registroDoMes(r, 'Criado em'));
     const numeros = {
@@ -333,7 +335,8 @@
       gtnKpiNovas: novas,
       gtnKpiValidacao: validacao,
       gtnKpiAnalise: analise,
-      gtnKpiOutros: basicos.length - novas - analise - validacao,
+      gtnKpiMelhorias: melhorias,
+      gtnKpiOutros: basicos.length - novas - analise - validacao - melhorias,
       gtnKpiComSR: basicos.filter(r => texto(r.dados?.SR).trim()).length,
       gtnKpiCriadasMes: criadas.length,
       gtnKpiAtualizadasMes: filtrados.filter(r => registroDoMes(r, 'Data de Atualização')).length,

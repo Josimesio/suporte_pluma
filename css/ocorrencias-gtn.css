@@ -97,7 +97,7 @@
 
 /* V4 — seis indicadores clicáveis; filtro rápido independente dos multisseleção. */
 #srOcorrencias .gtn-indicadores-grid--situacao {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 #srOcorrencias .gtn-indicador-acao {
   display:flex; flex-direction:column; align-items:center; justify-content:center;

@@ -45,6 +45,9 @@
       const visto = new Set(), duplicados = [], semCodigo = [];
       const mapeados = registros.map((r, posicao) => {
         const dados = Object.fromEntries(camposEsperados.map(k => [k, String(r[nomina.get(normal(k))] ?? "")]));
+        // Metadado opcional: preservado no JSON, sem alterar as 21 colunas GTN.
+        const colunaGeracao = nomina.get("gerado em");
+        if (colunaGeracao) dados["Gerado em"] = String(r[colunaGeracao] ?? "").trim();
         const codigo = dados["Código"].trim();
         if (!codigo) semCodigo.push(posicao + 2);
         if (visto.has(codigo)) duplicados.push(codigo);

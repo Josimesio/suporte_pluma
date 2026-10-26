@@ -17,17 +17,6 @@
   const FILE_NAME_RE = /\b(?:dados_sr(?:_\d{4})?|MOSSrSearchExport(?:_\d{4})?)\.csv\b/ig;
   let scheduled = false;
 
-  function brNow() {
-    return new Date().toLocaleString("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).replace(",", "");
-  }
-
   function formatarDataHora(valor) {
     const texto = String(valor || "").replace(/\s+BRT\s*$/i, "").trim();
     if (!texto || texto === "-" || texto === "...") return texto;
@@ -63,6 +52,51 @@
       if (formatado && formatado !== alvo.textContent.trim()) alvo.textContent = formatado;
     });
   }
+
+  // Mantém o valor Oracle em seu próprio elemento, mesmo durante cargas assíncronas.
+  let dataOcorrencias = "Não informada";
+  function atualizarIndicadorAba() {
+    const sr = document.getElementById("atualizadoEm");
+    const section = document.getElementById("srOcorrencias");
+    const badge = sr?.closest(".pl-updated-pill");
+    if (!sr || !section || !badge) return;
+    let gtn = document.getElementById("atualizadoEmOcorrencias");
+    if (!gtn) {
+      gtn = document.createElement("span");
+      gtn.id = "atualizadoEmOcorrencias";
+      gtn.className = "pl-updated-value";
+      sr.parentElement.appendChild(gtn);
+    }
+    const ocorrencias = !section.hidden;
+    const label = badge.querySelector(".pl-updated-label");
+    const titulo = ocorrencias ? "Ocorrências atualizadas em:" : "Atualizado em:";
+    if (label && label.textContent !== titulo) label.textContent = titulo;
+    if (gtn.textContent !== dataOcorrencias) gtn.textContent = dataOcorrencias;
+    sr.style.setProperty("display", ocorrencias ? "none" : "inline-block", "important");
+    gtn.style.setProperty("display", ocorrencias ? "inline-block" : "none", "important");
+    badge.title = ocorrencias
+      ? "Data de geração do CSV GTN (Gerado em), no horário de Brasília."
+      : "Data de geração informada no CSV dos chamados.";
+  }
+
+  window.addEventListener("pluma:ocorrencias-carregadas", (event) => {
+    let maior = "";
+    let valor = "Não informada";
+    for (const row of event.detail || []) {
+      const bruto = String(row.dados?.["Gerado em"] || "").trim();
+      const m = bruto.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+      if (!m) continue;
+      const [, dia, mes, ano, hora, minuto, segundo = "00"] = m;
+      const data = new Date(+ano, +mes - 1, +dia, +hora, +minuto, +segundo);
+      if (data.getFullYear() !== +ano || data.getMonth() !== +mes - 1 ||
+          data.getDate() !== +dia || +hora > 23 || +minuto > 59 || +segundo > 59) continue;
+      const chave = ano + mes + dia + hora + minuto + segundo;
+      if (chave > maior) { maior = chave; valor = `${dia}/${mes}/${ano} ${hora}:${minuto}`; }
+    }
+    dataOcorrencias = valor;
+    atualizarIndicadorAba();
+  });
+  window.addEventListener("pluma:aba-alterada", atualizarIndicadorAba);
 
   function injectStyle() {
     if (document.getElementById("pl-updated-highlight-style")) return;
@@ -203,12 +237,14 @@
 
     const holder = document.createElement("div");
     holder.className = "pl-auto-updated-holder";
-    holder.innerHTML = `<span id="atualizadoEmAuto">${brNow()}</span>`;
+    holder.innerHTML = `<span id="atualizadoEmAuto">Não informada</span>`;
     host.appendChild(holder);
   }
 
   function enhanceTarget(target) {
-    if (!target || target.dataset.plUpdatedEnhanced === "1") return;
+    if (!target) return;
+    // O cabeçalho pode ser reconstruído após o login, preservando apenas o span.
+    if (target.dataset.plUpdatedEnhanced === "1" && target.closest(".pl-updated-pill")) return;
 
     target.dataset.plUpdatedEnhanced = "1";
     target.classList.add("pl-updated-value");
@@ -268,6 +304,7 @@
       const target = document.getElementById(id);
       if (target) enhanceTarget(target);
     });
+    atualizarIndicadorAba();
   }
 
   function scheduleEnhance() {

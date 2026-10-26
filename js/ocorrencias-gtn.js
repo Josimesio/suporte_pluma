@@ -415,6 +415,7 @@
       }
       if (seq !== requisicao) return;
       dados = resultado;
+      window.dispatchEvent(new CustomEvent("pluma:ocorrencias-carregadas", { detail: dados }));
       iniciado = true; pagina = 1;
       filtros();
       $("gtnSincronizacao").textContent = `Atualizado: ${new Date().toLocaleString("pt-BR")}`;

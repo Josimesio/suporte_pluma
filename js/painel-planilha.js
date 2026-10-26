@@ -188,6 +188,7 @@
       const ativo = button.dataset.srTab === aba;
       button.setAttribute("aria-selected", String(ativo)); button.tabIndex = ativo ? 0 : -1;
     }
+    window.dispatchEvent(new CustomEvent("pluma:aba-alterada"));
     if (mostrarPlanilha && !carregado) await carregar();
     if (mostrarSR) await window.PlumaSRWorkbook?.abrir();
     if (consolidado) await window.PlumaConsolidado?.abrir();

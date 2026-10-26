@@ -204,7 +204,8 @@
   let indicadorRapido = "total";
   const nomesIndicadores = {
     total: "Total de ocorrências", abertas: "STATUS ABERTA", fechadas: "STATUS FECHADAS",
-    novas: "Novas", validacao: "Em validação", analise: "Em análise", melhorias: "Aguardando melhorias"
+    novas: "Novas", validacao: "Em validação", analise: "Em análise", melhorias: "Aguardando melhorias",
+    criadas_mes: "Criadas no mês", atualizadas_mes: "Atualizadas no mês", novas_mes: "Criadas no mês e ainda novas"
   };
   function statusGTN(r) {
     return texto(r.dados?.["Status da Ocorrência"]).trim().toLocaleLowerCase("pt-BR")
@@ -215,6 +216,11 @@
     // "Solicitado mais informações" seguem abertos; não inferir encerramento.
     return /^(fechad[oa]s?|concluid[oa]s?|finalizad[oa]s?|resolvid[oa]s?|encerrad[oa]s?|cancelad[oa]s?|closed|resolved|cancelled|canceled)(?:$|[\s(/-])/.test(statusGTN(r));
   }
+  function registroMesCorrente(r, campo) {
+    const hoje = new Date();
+    const periodo = periodoGTN(r.dados?.[campo]);
+    return !!periodo && periodo.mes === hoje.getMonth() + 1 && periodo.ano === hoje.getFullYear();
+  }
   function correspondeIndicador(r) {
     switch (indicadorRapido) {
       case "abertas": return !estaFechadaGTN(r);
@@ -223,6 +229,9 @@
       case "validacao": return statusGTN(r) === "em validacao";
       case "analise": return statusGTN(r) === "em analise";
       case "melhorias": return statusGTN(r) === "aguardar melhoria";
+      case "criadas_mes": return registroMesCorrente(r, "Criado em");
+      case "atualizadas_mes": return registroMesCorrente(r, "Data de Atualização");
+      case "novas_mes": return registroMesCorrente(r, "Criado em") && statusGTN(r) === "nova";
       default: return true;
     }
   }
@@ -327,7 +336,7 @@
     const validacao = basicos.filter(r => statusGTN(r) === 'em validacao').length;
     const melhorias = basicos.filter(r => statusGTN(r) === 'aguardar melhoria').length;
     const fechadas = basicos.filter(estaFechadaGTN).length;
-    const criadas = filtrados.filter(r => registroDoMes(r, 'Criado em'));
+    const criadas = basicos.filter(r => registroDoMes(r, 'Criado em'));
     const numeros = {
       gtnKpiTotal: basicos.length,
       gtnKpiAbertas: basicos.length - fechadas,
@@ -339,7 +348,7 @@
       gtnKpiOutros: basicos.length - novas - analise - validacao - melhorias,
       gtnKpiComSR: basicos.filter(r => texto(r.dados?.SR).trim()).length,
       gtnKpiCriadasMes: criadas.length,
-      gtnKpiAtualizadasMes: filtrados.filter(r => registroDoMes(r, 'Data de Atualização')).length,
+      gtnKpiAtualizadasMes: basicos.filter(r => registroDoMes(r, 'Data de Atualização')).length,
       gtnKpiNovasMes: criadas.filter(r => statusGTN(r) === 'nova').length
     };
     for (const [id, total] of Object.entries(numeros)) $(id).textContent = iniciado ? total.toLocaleString('pt-BR') : '—';

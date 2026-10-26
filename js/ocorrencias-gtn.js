@@ -428,7 +428,9 @@
   }
   async function abrir() {
     await window.plumaAuthPronto;
-    if (!iniciado) await carregar(); else render();
+    // Reconsulta ao voltar para a aba: uma importacao pode ter ocorrido em Acessos.
+    // Mantem rascunhos locais intactos; o usuario pode salvar/descartar antes de recarregar.
+    if (!iniciado || !rascunhos.size) await carregar(true); else render();
   }
   function mudar(event) {
     const input = event.target, codigo = input?.dataset.codigo, campo = input?.dataset.campo;
@@ -553,5 +555,13 @@
     }
     if (!section.hidden) render();
   });
+  // Acessos pode estar aberto em outra aba/janela do navegador.
+  function atualizarAoRetornar() {
+    if (iniciado && !section.hidden && !document.hidden && !ocupado && !rascunhos.size) {
+      void carregar(true);
+    }
+  }
+  window.addEventListener("focus", atualizarAoRetornar);
+  document.addEventListener("visibilitychange", atualizarAoRetornar);
   window.PlumaGTN = { abrir, recarregar: () => carregar(true) };
 })();

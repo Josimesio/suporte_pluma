@@ -147,6 +147,12 @@
   function validarPermissaoPagina() {
     if (!perfilSessao || perfilSessao.perfil === "administrador") return true;
     const arquivo = paginaAtual();
+    if (arquivo === "cargas.html") {
+      if (usuarioPodeRealizarCarga("oracle") || usuarioPodeRealizarCarga("gtn")) return true;
+      alert("Você não possui permissão para realizar cargas.");
+      window.location.replace("index.html");
+      return false;
+    }
     const chaves = {
       "index.html": "inicio",
       "index_2025.html": "chamados_2025", "graficos_2025.html": "graficos_2025",
@@ -173,7 +179,7 @@
     if (!window.aplicarCabecalhoPadronizado) {
       await new Promise((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = "js/cabecalho.js?v=20260718-6";
+        script.src = "js/cabecalho.js?v=20261026-v19-cargas";
         script.onload = resolve;
         script.onerror = () => reject(new Error("Não foi possível carregar o cabeçalho."));
         document.head.appendChild(script);
@@ -303,6 +309,11 @@
     return perfilSessao;
   }
 
+  function usuarioPodeRealizarCarga(tipo) {
+    if (!["oracle", "gtn"].includes(tipo) || perfilSessao?.ativo !== true) return false;
+    return perfilSessao.perfil === "administrador" || perfilSessao.permissoes?.[`carga_${tipo}`] === true;
+  }
+
   function usuarioEhAdminAcessos() {
     return perfilSessao?.perfil === "administrador" && perfilSessao?.ativo === true;
   }
@@ -356,6 +367,7 @@
   window.protegerPaginaAdminAcessos = protegerPaginaAdminAcessos;
   window.usuarioAtual = usuarioAtual;
   window.perfilAtual = perfilAtual;
+  window.usuarioPodeRealizarCarga = usuarioPodeRealizarCarga;
   window.usuarioEhAdminAcessos = usuarioEhAdminAcessos;
   window.usuarioPodeEditarPlanilhas = usuarioPodeEditarPlanilhas;
   window.usuarioPodeVisualizarAba = usuarioPodeVisualizarAba;

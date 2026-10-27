@@ -7,7 +7,7 @@
   <script src="js/supabase-config.js?v=20260717-2"></script>
   <script src="js/traducao.js?v=20261008-v10-abas"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/auth.js?v=20261008-v10-abas"></script>
+  <script src="js/auth.js?v=20261026-v19-cargas"></script>
   <script src="js/dados-supabase.js?v=20261013-v14-historico-admin"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -519,15 +519,15 @@
               <span class="gtn-mes-selo" id="gtnKpiMesSelo">Mês atual</span>
             </div>
             <div class="gtn-indicadores-grid">
-              <div class="card pl-card-kpi text-center gtn-indicador-card"><button type="button" class="gtn-indicador-acao" data-gtn-indicador="criadas_mes" aria-pressed="false" title="Filtrar ocorrências: Criadas no mês">
-                <span class="gtn-indicador-titulo">Criadas no mês</span><span id="gtnKpiCriadasMes" class="kpi-valor">—</span>
-              </button></div>
-              <div class="card pl-card-kpi text-center gtn-indicador-card"><button type="button" class="gtn-indicador-acao" data-gtn-indicador="atualizadas_mes" aria-pressed="false" title="Filtrar ocorrências: Atualizadas no mês">
-                <span class="gtn-indicador-titulo">Atualizadas no mês</span><span id="gtnKpiAtualizadasMes" class="kpi-valor">—</span>
-              </button></div>
-              <div class="card pl-card-kpi text-center gtn-indicador-card"><button type="button" class="gtn-indicador-acao" data-gtn-indicador="novas_mes" aria-pressed="false" title="Filtrar ocorrências: Criadas no mês e ainda Novas">
-                <span class="gtn-indicador-titulo">Criadas no mês e ainda Novas</span><span id="gtnKpiNovasMes" class="kpi-valor">—</span>
-              </button></div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
+                <h3 class="card-title">Criadas no mês</h3><p id="gtnKpiCriadasMes" class="card-text kpi-valor mb-0">—</p>
+              </div></div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
+                <h3 class="card-title">Atualizadas no mês</h3><p id="gtnKpiAtualizadasMes" class="card-text kpi-valor mb-0">—</p>
+              </div></div>
+              <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
+                <h3 class="card-title">Criadas no mês e ainda Novas</h3><p id="gtnKpiNovasMes" class="card-text kpi-valor mb-0">—</p>
+              </div></div>
               <div class="card pl-card-kpi text-center gtn-indicador-card"><div class="card-body py-2">
                 <h3 class="card-title">Referência</h3><p id="gtnKpiMesNome" class="card-text kpi-valor mb-0">—</p>
               </div></div>
@@ -722,7 +722,7 @@
   <script src="js/comentarios-consolidado.js?v=20261013-v14-historico-admin"></script>
   <script src="js/consolidado-sr.js?v=20261015-v20-salvar-rodape"></script>
   <script src="js/importacao-semanal-sr.js?v=20261015-v18-linhas"></script>
-  <script src="js/ocorrencias-gtn.js?v=20261026-filtros-mensais-v7"></script>
+  <script src="js/ocorrencias-gtn.js?v=20261026-melhorias-v6"></script>
   <script src="js/painel-planilha.js?v=20261026-gerado-em-v3"></script>
 
 </body>

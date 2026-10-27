@@ -1,0 +1,34 @@
+SUPORTE ORACLE — V19 — DELEGAÇÃO DE CARGAS
+
+INSTALAÇÃO
+1. No Supabase do portal, abra SQL Editor > New query.
+2. Cole TODO o conteúdo de sql/ATUALIZAR_PERMISSOES_CARGAS_V19.sql e execute.
+   O SQL preserva os dados e históricos existentes. Não concede carga a ninguém automaticamente.
+3. Atualize o site com os arquivos deste pacote, preservando a estrutura de pastas.
+4. Recarregue o navegador com Ctrl+F5.
+
+COMO LIBERAR
+1. Entre como Administrador.
+2. Acessos > Usuários cadastrados > Configurar.
+3. Marque Realizar carga Oracle e/ou Realizar carga GTN — Ocorrências.
+4. Clique em Salvar permissões. Mantenha o perfil atual do usuário.
+5. A pessoa autorizada recarrega o site e acessa o novo menu Cargas.
+   Só as cargas liberadas aparecem. Para retirar a autorização, desmarque e salve.
+
+COMPORTAMENTO
+- Administradores continuam com acesso às duas cargas, inclusive na tela Acessos.
+- Demais perfis podem receber uma ou ambas as permissões sem acesso à administração.
+- As permissões de visualização e de edição manual não são ampliadas.
+- A carga Oracle permite os anos 2025 e 2026 e mantém a atualização pelo número SR.
+- A carga Oracle confirma lotes de até 300 chamados; se houver falha, lotes anteriores
+  já confirmados permanecem gravados. Confira antes de repetir.
+- O importador GTN existente é preservado, incluindo Gerado em, quatro campos
+  amarelos, comentários, versões e validação do CSV.
+- O banco verifica usuário ativo, autorização e segundo fator quando exigido.
+- Não reaplique SQLs antigos depois da V19, pois eles podem restabelecer regras anteriores.
+
+VALIDAÇÃO
+- SQL executado duas vezes em PostgreSQL local (PGlite), com cenários de permissão,
+  revogação, usuário inativo, segundo fator, autoria e preservação das ocorrências.
+- O banco de produção não foi alterado: o projeto do portal não está acessível pela
+  conexão Supabase disponível nesta sessão.

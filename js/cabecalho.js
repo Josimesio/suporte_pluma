@@ -5,6 +5,7 @@
   window.__PLUMA_CABECALHO_CARREGADO__ = true;
 
   const paginas = {
+    "cargas.html": { titulo: "Cargas de Dados", chave: "cargas" },
     "index.html": { titulo: "Suporte ORACLE", chave: "inicio" },
     "index_2025.html": { titulo: "Chamados 2025 - ORACLE", chave: "chamados_2025" },
     "graficos_2025.html": { titulo: "Gráficos dos Chamados 2025 - ORACLE", chave: "graficos_2025" },
@@ -170,7 +171,9 @@
     const admin = perfil?.perfil === "administrador"
       ? `<div class="pl-nav-grupo"><span class="pl-nav-rotulo">Admin</span><a class="btn ${arquivo === "admin_acessos.html" ? "pl-ativo" : ""}" href="admin_acessos.html">👥 Acessos</a><a class="btn ${arquivo === "admin_analitico.html" ? "pl-ativo" : ""}" href="admin_analitico.html">📈 Analítico</a></div>`
       : "";
-    return grupos + admin;
+    const cargas = perfil?.ativo === true && (perfil.perfil === "administrador" || perfil.permissoes?.carga_oracle === true || perfil.permissoes?.carga_gtn === true)
+      ? `<div class="pl-nav-grupo"><span class="pl-nav-rotulo">Dados</span><a class="btn ${arquivo === "cargas.html" ? "pl-ativo" : ""}" href="cargas.html">⬆️ Cargas</a></div>` : "";
+    return grupos + cargas + admin;
   }
 
   function ehPaginaChamados(arquivo) {

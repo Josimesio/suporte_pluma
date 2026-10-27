@@ -1,4 +1,4 @@
-/* Importação GTN exclusiva de Acessos (somente Administrador).
+/* Importação GTN em Acessos e Cargas, mediante autorização específica.
    Usa analisarCsv() já existente: delimitador ; e textos multilinha entre aspas. */
 (function () {
   "use strict";
@@ -49,6 +49,7 @@
     }
   }
   async function prepararGTN() {
+    if (!window.usuarioPodeRealizarCarga?.("gtn")) return;
     const sequencia = ++preparando;
     arquivoAtual = null; listaAtual = null;
     $("gtnConfirmarImportacao").disabled = true;
@@ -104,7 +105,7 @@
     }
   }
   async function confirmarGTN() {
-    if (!listaAtual || !arquivoAtual || !window.usuarioEhAdminAcessos?.()) return;
+    if (!listaAtual || !arquivoAtual || !window.usuarioPodeRealizarCarga?.("gtn")) return;
     if ($("gtnArquivoImportacao").files?.[0] !== arquivoAtual) {
       status("O arquivo selecionado mudou. Prepare a prévia novamente.", "danger"); return;
     }
